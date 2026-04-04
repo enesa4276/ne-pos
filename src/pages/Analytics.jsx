@@ -105,7 +105,7 @@ export default function Analytics() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Toplam Gelir</p>
-                  <p className="text-xl font-bold text-primary">₺{totalRevenue.toFixed(0)}</p>
+                  <p className="text-xl font-bold text-primary">€{totalRevenue.toFixed(0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -155,14 +155,14 @@ export default function Analytics() {
         {period !== 'today' && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Günlük Gelir (₺)</CardTitle>
+              <CardTitle className="text-base">Günlük Gelir (€)</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={dailyData}>
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v) => `₺${v}`} />
+                  <Tooltip formatter={(v) => `€${v}`} />
                   <Bar dataKey="gelir" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -223,7 +223,7 @@ export default function Analytics() {
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span className="font-medium">{p.name}</span>
-                        <span className="text-muted-foreground">{p.qty} adet · ₺{p.revenue.toFixed(0)}</span>
+                        <span className="text-muted-foreground">{p.qty} adet · €{p.revenue.toFixed(0)}</span>
                       </div>
                       <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                         <div
@@ -243,7 +243,7 @@ export default function Analytics() {
         <Card>
           <CardContent className="p-4 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Ortalama Sipariş Tutarı</span>
-            <span className="text-2xl font-bold text-primary">₺{avgOrder.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-primary">€{avgOrder.toFixed(2)}</span>
           </CardContent>
         </Card>
       </div>
