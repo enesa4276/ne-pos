@@ -45,9 +45,11 @@ export function CustomerReceipt({ order, total, t, companyInfo }) {
 
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
-      <div className="print-title text-center text-xl font-bold mb-1">
-        {ci.company_name || 'RestoPOS'}
-      </div>
+      {ci.company_name && (
+        <div className="print-title text-center text-xl font-bold mb-1">
+          {ci.company_name}
+        </div>
+      )}
       {ci.vat_number && (
         <div className="text-center text-xs">
           BTW/TVA: {ci.vat_number}
