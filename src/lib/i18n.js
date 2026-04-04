@@ -99,7 +99,7 @@ export const translations = {
     savedSuccess: 'Kaydedildi!',
     saving: 'Kaydediliyor...',
     saveSettings: 'Ayarları Kaydet',
-    poweredBy: 'Ne-Pa Yazılım & Grafik tarafından geliştirilmiştir',
+    poweredBy: 'Ne-Pos',
 
     // Table status
     empty: 'Boş',
@@ -228,7 +228,7 @@ export const translations = {
     savedSuccess: 'Saved!',
     saving: 'Saving...',
     saveSettings: 'Save Settings',
-    poweredBy: 'Developed by Ne-Pa Yazılım & Grafik',
+    poweredBy: 'Ne-Pos',
   },
 
   nl: {
@@ -338,7 +338,7 @@ export const translations = {
     savedSuccess: 'Opgeslagen!',
     saving: 'Opslaan...',
     saveSettings: 'Instellingen Opslaan',
-    poweredBy: 'Ontwikkeld door Ne-Pa Yazılım & Grafik',
+    poweredBy: 'Ne-Pos',
   },
 };
 

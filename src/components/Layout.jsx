@@ -22,14 +22,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="text-center py-1.5 text-xs text-muted-foreground border-t border-border bg-card/50">
-        <a
-          href="https://www.nepagy.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-primary transition-colors"
-        >
-          {t('poweredBy')}
-        </a>
+        Ne-Pos © {new Date().getFullYear()}
       </footer>
     </div>
   );
