@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useLang } from '@/lib/LanguageContext';
+import { formatCurrency } from '@/lib/i18n';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,10 +14,10 @@ import { toast } from 'sonner';
 import PaymentDialog from '@/components/pos/PaymentDialog';
 import { CustomerReceipt } from '@/components/pos/ReceiptPrint';
 
-const statusLabels = {
-  open: { label: 'Açık', variant: 'default' },
-  paid: { label: 'Ödendi', variant: 'secondary' },
-  cancelled: { label: 'İptal', variant: 'destructive' },
+const STATUS_VARIANTS = {
+  open: 'default',
+  paid: 'secondary',
+  cancelled: 'destructive',
 };
 
 // 🔒 GİZLİ SİLME: Bir siparişi silmek için sipariş kartına 5 kez hızlıca tıkla.
@@ -27,6 +29,7 @@ const SECRET_CLICK_COUNT = 5;
 export default function Orders() {
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
+  const { t } = useLang();
   const [filter, setFilter] = useState('open');
   const [payingOrder, setPayingOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
@@ -70,7 +73,7 @@ export default function Orders() {
     if (payingOrder.table_id) {
       await updateTable.mutateAsync({ id: payingOrder.table_id, data: { status: 'empty' } });
     }
-    toast.success('Ödeme alındı!');
+    toast.success(t('paymentReceived'));
     setPayingOrder(null);
   };
 
@@ -101,13 +104,13 @@ export default function Orders() {
 
   const handleSecretDelete = async () => {
     if (secretCode !== SECRET_DELETE_CODE) {
-      toast.error('Yanlış kod');
+      toast.error(t('wrongCode'));
       return;
     }
     await deleteOrder.mutateAsync(secretDeleteOrder.id);
     setSecretDeleteOrder(null);
     setSecretCode('');
-    toast.success('Silindi');
+    toast.success(t('deleted'));
   };
 
   if (isLoading) return (
@@ -119,13 +122,13 @@ export default function Orders() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border bg-card/50">
-        <h2 className="font-bold text-lg mb-3">Siparişler</h2>
+        <h2 className="font-bold text-lg mb-3">{t('ordersTitle')}</h2>
         <Tabs value={filter} onValueChange={setFilter}>
           <TabsList>
-            <TabsTrigger value="open">Açık</TabsTrigger>
-            <TabsTrigger value="paid">Ödendi</TabsTrigger>
-            <TabsTrigger value="cancelled">İptal</TabsTrigger>
-            <TabsTrigger value="all">Tümü</TabsTrigger>
+            <TabsTrigger value="open">{t('open')}</TabsTrigger>
+            <TabsTrigger value="paid">{t('paid')}</TabsTrigger>
+            <TabsTrigger value="cancelled">{t('cancelled')}</TabsTrigger>
+            <TabsTrigger value="all">{t('all')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -133,13 +136,13 @@ export default function Orders() {
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3 max-w-4xl mx-auto">
           {filteredOrders.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">Sipariş bulunamadı</p>
+            <p className="text-center text-muted-foreground py-12">{t('noOrders')}</p>
           )}
           {filteredOrders.map((order) => {
-            const st = statusLabels[order.status] || statusLabels.open;
+            const stVariant = STATUS_VARIANTS[order.status] || 'default';
+            const stLabel = t(order.status) || order.status;
             return (
               <div key={order.id} className="bg-card rounded-2xl border border-border p-4 space-y-3">
-                {/* Header — 5 hızlı tıkla gizli silme */}
                 <div
                   className="flex items-center justify-between cursor-default select-none"
                   onClick={() => handleSecretClick(order)}
@@ -149,12 +152,12 @@ export default function Orders() {
                       ? <Package className="h-4 w-4 text-accent" />
                       : <UtensilsCrossed className="h-4 w-4 text-primary" />}
                     <span className="font-bold text-sm">
-                      {order.order_type === 'takeaway' ? 'Paket' : order.table_name || 'Masa'}
+                      {order.order_type === 'takeaway' ? t('takeaway') : order.table_name || t('tables')}
                     </span>
-                    <Badge variant={st.variant} className="text-xs">{st.label}</Badge>
+                    <Badge variant={stVariant} className="text-xs">{stLabel}</Badge>
                     {order.payment_method && (
                       <Badge variant="outline" className="text-xs">
-                        {order.payment_method === 'cash' ? 'Nakit' : 'Kart'}
+                        {order.payment_method === 'cash' ? t('cash') : t('creditCard')}
                       </Badge>
                     )}
                   </div>
@@ -174,22 +177,22 @@ export default function Orders() {
                           </span>
                         )}
                       </span>
-                      <span className="font-medium">₺{item.subtotal?.toFixed(2)}</span>
+                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
-                  <span className="font-bold text-primary text-lg">₺{order.total?.toFixed(2)}</span>
+                  <span className="font-bold text-primary text-lg">{formatCurrency(order.total)}</span>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="gap-1 rounded-xl" onClick={() => handlePrint(order)}>
                       <Printer className="h-4 w-4" />
-                      <span className="hidden sm:inline">Bon Yazdır</span>
+                      <span className="hidden sm:inline">{t('printReceipt')}</span>
                     </Button>
                     {order.status === 'open' && (
                       <Button size="sm" className="gap-1 rounded-xl" onClick={() => setPayingOrder(order)}>
                         <CreditCard className="h-4 w-4" />
-                        Ödeme Al
+                        {t('takePayment')}
                       </Button>
                     )}
                   </div>
@@ -211,23 +214,23 @@ export default function Orders() {
       {/* Print Template */}
       {printOrder && <CustomerReceipt order={printOrder} total={printOrder.total} />}
 
-      {/* 🔒 Gizli Silme Modal */}
+      {/* 🔒 Secret Delete Modal */}
       {secretDeleteOrder && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setSecretDeleteOrder(null)}>
           <div className="bg-card rounded-2xl p-6 w-80 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <p className="text-sm font-bold text-center">Doğrulama Kodu</p>
+            <p className="text-sm font-bold text-center">{t('verificationCode')}</p>
             <input
               autoFocus
               type="password"
               value={secretCode}
               onChange={e => setSecretCode(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === 'Enter' && handleSecretDelete()}
-              placeholder="Kodu girin..."
+              placeholder={t('enterCode')}
               className="w-full border border-border rounded-xl px-4 py-3 text-center text-lg font-mono bg-background outline-none focus:border-primary"
             />
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setSecretDeleteOrder(null)}>İptal</Button>
-              <Button variant="destructive" className="flex-1 rounded-xl" onClick={handleSecretDelete}>Onayla</Button>
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setSecretDeleteOrder(null)}>{t('cancel')}</Button>
+              <Button variant="destructive" className="flex-1 rounded-xl" onClick={handleSecretDelete}>{t('confirm')}</Button>
             </div>
           </div>
         </div>

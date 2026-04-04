@@ -141,7 +141,7 @@ export default function POS() {
   const handlePayLater = async () => {
     setShowPayment(false);
     const subtotal = cartItems.reduce((s, i) => s + i.subtotal, 0);
-    const total = subtotal + subtotal * 0.10;
+    const total = subtotal + subtotal * 0.21;
 
     await createOrder.mutateAsync({
       order_type: isTakeaway ? 'takeaway' : 'dine_in',
@@ -165,7 +165,7 @@ export default function POS() {
   const handlePaymentComplete = async (method) => {
     setShowPayment(false);
     const subtotal = cartItems.reduce((s, i) => s + i.subtotal, 0);
-    const total = subtotal + subtotal * 0.10;
+    const total = subtotal + subtotal * 0.21;
 
     await createOrder.mutateAsync({
       order_type: isTakeaway ? 'takeaway' : 'dine_in',

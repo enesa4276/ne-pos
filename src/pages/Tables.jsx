@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useLang } from '@/lib/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Package, Loader2 } from 'lucide-react';
@@ -11,6 +12,7 @@ import TableGrid from '@/components/pos/TableGrid';
 export default function Tables() {
   const navigate = useNavigate();
   const { data: user } = useCurrentUser();
+  const { t } = useLang();
 
   const { data: tables = [], isLoading } = useQuery({
     queryKey: ['tables', user?.email],
@@ -43,16 +45,16 @@ export default function Tables() {
           className="w-full h-16 text-lg font-bold rounded-2xl gap-3 bg-accent hover:bg-accent/90 text-accent-foreground"
         >
           <Package className="h-6 w-6" />
-          Hızlı Sipariş / Gel-Al (Paket)
+          {t('quickOrder')}
         </Button>
 
         {/* Tables */}
         <div>
-          <h2 className="text-lg font-bold mb-4">Masalar</h2>
+          <h2 className="text-lg font-bold mb-4">{t('tables')}</h2>
           <TableGrid tables={tables} onTableClick={handleTableClick} />
           {tables.length === 0 && (
             <p className="text-center text-muted-foreground py-8">
-              Henüz masa eklenmemiş. Yönetim panelinden masa ekleyin.
+              {t('noTables')}
             </p>
           )}
         </div>

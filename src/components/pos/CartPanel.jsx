@@ -2,18 +2,21 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Minus, Trash2, CreditCard, ChefHat, X } from 'lucide-react';
+import { useLang } from '@/lib/LanguageContext';
+import { formatCurrency } from '@/lib/i18n';
 
 export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, onPayment, onSendKitchen, onCancel }) {
+  const { t } = useLang();
   const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const tax = subtotal * 0.10;
+  const tax = subtotal * 0.21;
   const total = subtotal + tax;
 
   return (
     <div className="flex flex-col h-full bg-card rounded-2xl border border-border overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border bg-secondary/50">
-        <h2 className="font-bold text-base text-foreground">{orderLabel || 'Yeni Sipariş'}</h2>
-        <p className="text-xs text-muted-foreground">{items.length} kalem</p>
+        <h2 className="font-bold text-base text-foreground">{orderLabel || t('newOrder')}</h2>
+        <p className="text-xs text-muted-foreground">{items.length} {t('items')}</p>
       </div>
 
       {/* Items */}
@@ -21,7 +24,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
         <div className="p-3 space-y-2">
           {items.length === 0 && (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              Ürün eklemek için menüden seçin
+              {t('addFromMenu')}
             </div>
           )}
           {items.map((item, idx) => (
@@ -35,7 +38,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
                     </p>
                   )}
                 </div>
-                <p className="font-bold text-sm text-primary ml-2">₺{item.subtotal.toFixed(2)}</p>
+                <p className="font-bold text-sm text-primary ml-2">{formatCurrency(item.subtotal)}</p>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -74,16 +77,16 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
       {/* Totals */}
       <div className="border-t border-border p-4 space-y-2">
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Ara Toplam</span>
-          <span>₺{subtotal.toFixed(2)}</span>
+          <span>{t('subtotal')}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>KDV (%10)</span>
-          <span>₺{tax.toFixed(2)}</span>
+          <span>{t('vat')}</span>
+          <span>{formatCurrency(tax)}</span>
         </div>
         <div className="flex justify-between text-lg font-bold text-foreground pt-1 border-t border-border">
-          <span>Genel Toplam</span>
-          <span className="text-primary">₺{total.toFixed(2)}</span>
+          <span>{t('grandTotal')}</span>
+          <span className="text-primary">{formatCurrency(total)}</span>
         </div>
       </div>
 
@@ -96,7 +99,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
           disabled={items.length === 0}
         >
           <X className="h-5 w-5" />
-          <span className="text-xs font-semibold">İptal</span>
+          <span className="text-xs font-semibold">{t('cancel')}</span>
         </Button>
         <Button
           variant="outline"
@@ -105,7 +108,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
           disabled={items.length === 0}
         >
           <ChefHat className="h-5 w-5" />
-          <span className="text-xs font-semibold">Mutfak</span>
+          <span className="text-xs font-semibold">{t('kitchen')}</span>
         </Button>
         <Button
           className="h-14 rounded-xl flex-col gap-0.5"
@@ -113,7 +116,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
           disabled={items.length === 0}
         >
           <CreditCard className="h-5 w-5" />
-          <span className="text-xs font-semibold">Ödeme</span>
+          <span className="text-xs font-semibold">{t('payment')}</span>
         </Button>
       </div>
     </div>
