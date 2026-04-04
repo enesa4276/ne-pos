@@ -53,7 +53,7 @@ export default function CartPanel({ items, orderLabel, onUpdateQty, onRemove, on
     if (!val || val <= 0) return;
     if (manualDiscount.type === 'percentage' && val > 100) return;
     setAppliedDiscount({
-      name: manualDiscount.type === 'percentage' ? `%${val} Manuel İndirim` : `€${val} Manuel İndirim`,
+      name: manualDiscount.type === 'percentage' ? `%${val} Manuel İndirim` : `${formatCurrency(val)} Manuel İndirim`,
       type: manualDiscount.type,
       value: val,
     });
