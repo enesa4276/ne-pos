@@ -12,9 +12,9 @@ export default function POSHeader({ darkMode, onToggleDark }) {
     <header className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center">
-          <span className="text-primary-foreground font-black text-sm">R</span>
+          <span className="text-primary-foreground font-black text-sm">N</span>
         </div>
-        <h1 className="font-bold text-lg hidden sm:block">{t('appName')}</h1>
+        <h1 className="font-bold text-lg hidden sm:block">Ne-Pos</h1>
       </div>
 
       <nav className="flex items-center gap-1 flex-wrap">
