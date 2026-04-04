@@ -228,7 +228,7 @@ export const translations = {
     savedSuccess: 'Saved!',
     saving: 'Saving...',
     saveSettings: 'Save Settings',
-    poweredBy: 'Ne-Pa Yazılım & Grafik tarafından geliştirilmiştir',
+    poweredBy: 'Developed by Ne-Pa Software & Graphics',
   },
 
   nl: {
@@ -338,7 +338,7 @@ export const translations = {
     savedSuccess: 'Opgeslagen!',
     saving: 'Opslaan...',
     saveSettings: 'Instellingen Opslaan',
-    poweredBy: 'Ne-Pa Yazılım & Grafik tarafından geliştirilmiştir',
+    poweredBy: 'Ontwikkeld door Ne-Pa Software & Graphics',
   },
 };
 
