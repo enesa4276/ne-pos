@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,11 +10,13 @@ import { toast } from 'sonner';
 
 export default function TableManager() {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
   const [name, setName] = useState('');
 
   const { data: tables = [] } = useQuery({
-    queryKey: ['tables'],
-    queryFn: () => base44.entities.RestaurantTable.list('name'),
+    queryKey: ['tables', user?.email],
+    queryFn: () => base44.entities.RestaurantTable.filter({ created_by: user?.email }, 'name'),
+    enabled: !!user?.email,
   });
 
   const create = useMutation({

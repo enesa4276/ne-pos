@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Package, Settings, Sun, Moon } from 'lucide-react';
+import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function POSHeader({ darkMode, onToggleDark }) {
@@ -25,6 +25,12 @@ export default function POSHeader({ darkMode, onToggleDark }) {
           <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
             <Package className="h-4 w-4" />
             <span className="hidden sm:inline">Siparişler</span>
+          </Button>
+        </Link>
+        <Link to="/analytics">
+          <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
+            <BarChart2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Analiz</span>
           </Button>
         </Link>
         <Link to="/admin">

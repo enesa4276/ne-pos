@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,11 +11,13 @@ import { toast } from 'sonner';
 
 export default function CategoryManager() {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
   const [name, setName] = useState('');
 
   const { data: categories = [], isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list('sort_order'),
+    queryKey: ['categories', user?.email],
+    queryFn: () => base44.entities.Category.filter({ created_by: user?.email }, 'sort_order'),
+    enabled: !!user?.email,
   });
 
   const create = useMutation({

@@ -10,6 +10,7 @@ import Tables from '@/pages/Tables';
 import POS from '@/pages/POS';
 import Orders from '@/pages/Orders';
 import Admin from '@/pages/Admin';
+import Analytics from '@/pages/Analytics';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/pos" element={<POS />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/analytics" element={<Analytics />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

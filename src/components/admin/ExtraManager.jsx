@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 
 export default function ExtraManager() {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
   const [groupName, setGroupName] = useState('');
   const [groupType, setGroupType] = useState('multiple');
   const [extraName, setExtraName] = useState('');
@@ -17,13 +19,15 @@ export default function ExtraManager() {
   const [extraGroupId, setExtraGroupId] = useState('');
 
   const { data: extraGroups = [], isLoading: loadingGroups } = useQuery({
-    queryKey: ['extraGroups'],
-    queryFn: () => base44.entities.ExtraGroup.list(),
+    queryKey: ['extraGroups', user?.email],
+    queryFn: () => base44.entities.ExtraGroup.filter({ created_by: user?.email }),
+    enabled: !!user?.email,
   });
 
   const { data: extras = [], isLoading: loadingExtras } = useQuery({
-    queryKey: ['extras'],
-    queryFn: () => base44.entities.Extra.list(),
+    queryKey: ['extras', user?.email],
+    queryFn: () => base44.entities.Extra.filter({ created_by: user?.email }),
+    enabled: !!user?.email,
   });
 
   const createGroup = useMutation({

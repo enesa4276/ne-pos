@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Package, Loader2 } from 'lucide-react';
@@ -9,10 +10,12 @@ import TableGrid from '@/components/pos/TableGrid';
 
 export default function Tables() {
   const navigate = useNavigate();
+  const { data: user } = useCurrentUser();
 
   const { data: tables = [], isLoading } = useQuery({
-    queryKey: ['tables'],
-    queryFn: () => base44.entities.RestaurantTable.list('name'),
+    queryKey: ['tables', user?.email],
+    queryFn: () => base44.entities.RestaurantTable.filter({ created_by: user?.email }, 'name'),
+    enabled: !!user?.email,
   });
 
   const handleTableClick = (table) => {

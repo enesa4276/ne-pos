@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -13,23 +14,27 @@ import { toast } from 'sonner';
 
 export default function ProductManager() {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', category_id: '', base_price: '', image_url: '', extra_group_ids: [] });
 
   const { data: products = [] } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => base44.entities.Product.list('name'),
+    queryKey: ['products', user?.email],
+    queryFn: () => base44.entities.Product.filter({ created_by: user?.email }, 'name'),
+    enabled: !!user?.email,
   });
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list('sort_order'),
+    queryKey: ['categories', user?.email],
+    queryFn: () => base44.entities.Category.filter({ created_by: user?.email }, 'sort_order'),
+    enabled: !!user?.email,
   });
 
   const { data: extraGroups = [] } = useQuery({
-    queryKey: ['extraGroups'],
-    queryFn: () => base44.entities.ExtraGroup.list(),
+    queryKey: ['extraGroups', user?.email],
+    queryFn: () => base44.entities.ExtraGroup.filter({ created_by: user?.email }),
+    enabled: !!user?.email,
   });
 
   const create = useMutation({
