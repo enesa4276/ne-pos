@@ -26,7 +26,7 @@ export default function ProductGrid({ products, onProductClick }) {
             {product.name}
           </span>
           <span className="text-primary font-bold text-base mt-1">
-            ₺{product.base_price?.toFixed(2)}
+            €{product.base_price?.toFixed(2)}
           </span>
         </button>
       ))}

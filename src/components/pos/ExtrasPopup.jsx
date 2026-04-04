@@ -71,7 +71,7 @@ export default function ExtrasPopup({ open, onClose, product, extraGroups, extra
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{product.name}</DialogTitle>
-          <p className="text-primary font-bold text-lg">₺{product.base_price?.toFixed(2)}</p>
+          <p className="text-primary font-bold text-lg">€{product.base_price?.toFixed(2)}</p>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
@@ -106,7 +106,7 @@ export default function ExtrasPopup({ open, onClose, product, extraGroups, extra
                         <span className="text-sm font-medium">{extra.name}</span>
                       </div>
                       {extra.price > 0 && (
-                        <span className="text-primary font-semibold text-sm">+₺{extra.price?.toFixed(2)}</span>
+                        <span className="text-primary font-semibold text-sm">+€{extra.price?.toFixed(2)}</span>
                       )}
                     </Label>
                   ))}
@@ -133,7 +133,7 @@ export default function ExtrasPopup({ open, onClose, product, extraGroups, extra
                         <span className="text-sm font-medium">{extra.name}</span>
                       </div>
                       {extra.price > 0 && (
-                        <span className="text-primary font-semibold text-sm">+₺{extra.price?.toFixed(2)}</span>
+                        <span className="text-primary font-semibold text-sm">+€{extra.price?.toFixed(2)}</span>
                       )}
                     </Label>
                   ))}
@@ -169,7 +169,7 @@ export default function ExtrasPopup({ open, onClose, product, extraGroups, extra
             disabled={!canAdd()}
             onClick={handleAdd}
           >
-            Ekle — ₺{itemTotal.toFixed(2)}
+            Ekle — €{itemTotal.toFixed(2)}
           </Button>
         </DialogFooter>
       </DialogContent>
