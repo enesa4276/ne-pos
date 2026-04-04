@@ -22,7 +22,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="text-center py-1.5 text-xs text-muted-foreground border-t border-border bg-card/50">
-        Ne-Pa Yazılım ve Grafik Tarafından Geliştirilmiştir
+        {t('poweredBy')}
       </footer>
     </div>
   );
