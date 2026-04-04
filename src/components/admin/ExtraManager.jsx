@@ -112,7 +112,7 @@ export default function ExtraManager() {
             <div className="space-y-1 pl-3">
               {extras.filter(e => e.group_id === group.id).map(extra => (
                 <div key={extra.id} className="flex items-center justify-between bg-background rounded-lg px-3 py-2">
-                  <span className="text-sm">{extra.name} {extra.price > 0 && <span className="text-primary">+₺{extra.price}</span>}</span>
+                  <span className="text-sm">{extra.name} {extra.price > 0 && <span className="text-primary">+€{extra.price}</span>}</span>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteExtra.mutate(extra.id)}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -131,7 +131,7 @@ export default function ExtraManager() {
               />
               <Input
                 type="number"
-                placeholder="₺ Fiyat"
+                placeholder="€ Fiyat"
                 className="rounded-lg text-sm w-24"
                 value={extraGroupId === group.id ? extraPrice : ''}
                 onFocus={() => setExtraGroupId(group.id)}

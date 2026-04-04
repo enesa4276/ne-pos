@@ -13,7 +13,7 @@
     "price": {
       "type": "number",
       "default": 0,
-      "description": "Additional price in TL"
+      "description": "Additional price in EUR"
     }
   },
   "required": [

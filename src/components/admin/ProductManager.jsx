@@ -121,7 +121,7 @@ export default function ProductManager() {
               <div key={product.id} className="flex items-center justify-between bg-secondary rounded-xl px-4 py-3">
                 <div>
                   <span className="font-medium text-sm">{product.name}</span>
-                  <span className="ml-2 text-primary font-bold text-sm">₺{product.base_price?.toFixed(2)}</span>
+                  <span className="ml-2 text-primary font-bold text-sm">€{product.base_price?.toFixed(2)}</span>
                   {cat && <span className="ml-2 text-xs text-muted-foreground">{cat.name}</span>}
                 </div>
                 <div className="flex gap-1">
@@ -151,7 +151,7 @@ export default function ProductManager() {
                 <Input value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} className="rounded-xl" />
               </div>
               <div className="space-y-1">
-                <Label>Fiyat (₺)</Label>
+                <Label>Fiyat (€)</Label>
                 <Input type="number" value={form.base_price} onChange={(e) => setForm(p => ({ ...p, base_price: e.target.value }))} className="rounded-xl" />
               </div>
               <div className="space-y-1">

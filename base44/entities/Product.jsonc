@@ -12,7 +12,7 @@
     },
     "base_price": {
       "type": "number",
-      "description": "Base price in TL"
+      "description": "Base price in EUR"
     },
     "image_url": {
       "type": "string",
