@@ -106,6 +106,13 @@ export const translations = {
     occupied: 'Dolu',
     billRequested: 'Hesap',
 
+    // Discount
+    discountCode: 'İndirim Kodu Gir...',
+    apply: 'Uygula',
+    manualDiscount: 'Manuel İndirim',
+    discount: 'İndirim',
+    invalidCode: 'Geçersiz veya pasif indirim kodu',
+
     // Secret delete
     verificationCode: 'Doğrulama Kodu',
     enterCode: 'Kodu girin...',
@@ -194,6 +201,13 @@ export const translations = {
     empty: 'Empty',
     occupied: 'Occupied',
     billRequested: 'Bill',
+
+    // Discount
+    discountCode: 'Enter Discount Code...',
+    apply: 'Apply',
+    manualDiscount: 'Manual Discount',
+    discount: 'Discount',
+    invalidCode: 'Invalid or inactive discount code',
 
     verificationCode: 'Verification Code',
     enterCode: 'Enter code...',
@@ -297,6 +311,13 @@ export const translations = {
     empty: 'Vrij',
     occupied: 'Bezet',
     billRequested: 'Rekening',
+
+    // Discount
+    discountCode: 'Kortingscode invoeren...',
+    apply: 'Toepassen',
+    manualDiscount: 'Handmatige korting',
+    discount: 'Korting',
+    invalidCode: 'Ongeldige of inactieve kortingscode',
 
     verificationCode: 'Verificatiecode',
     enterCode: 'Code invoeren...',

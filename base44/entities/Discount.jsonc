@@ -1,0 +1,38 @@
+{
+  "name": "Discount",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "\u0130ndirim ad\u0131 / a\u00e7\u0131klamas\u0131"
+    },
+    "code": {
+      "type": "string",
+      "description": "\u0130ndirim kodu (b\u00fcy\u00fck harf, bo\u015fluksuz)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "percentage",
+        "fixed"
+      ],
+      "default": "percentage",
+      "description": "percentage = y\u00fczde, fixed = sabit tutar"
+    },
+    "value": {
+      "type": "number",
+      "description": "\u0130ndirim de\u011feri (y\u00fczde i\u00e7in 0-100, sabit i\u00e7in \u20ac)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktif mi?"
+    }
+  },
+  "required": [
+    "name",
+    "code",
+    "type",
+    "value"
+  ]
+}

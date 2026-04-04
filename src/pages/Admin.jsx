@@ -4,6 +4,7 @@ import CategoryManager from '@/components/admin/CategoryManager';
 import ExtraManager from '@/components/admin/ExtraManager';
 import ProductManager from '@/components/admin/ProductManager';
 import TableManager from '@/components/admin/TableManager';
+import DiscountManager from '@/components/admin/DiscountManager';
 
 export default function Admin() {
   return (
@@ -15,6 +16,9 @@ export default function Admin() {
           <CategoryManager />
           <ExtraManager />
           <ProductManager />
+          <div className="bg-card rounded-2xl border border-border p-4">
+            <DiscountManager />
+          </div>
         </div>
       </div>
     </ScrollArea>
