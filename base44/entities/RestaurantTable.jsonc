@@ -1,0 +1,23 @@
+{
+  "name": "RestaurantTable",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Table name (Masa 1, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "empty",
+        "occupied",
+        "bill_requested"
+      ],
+      "default": "empty",
+      "description": "empty=Green, occupied=Red, bill_requested=Orange"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

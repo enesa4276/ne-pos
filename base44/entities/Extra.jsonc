@@ -1,0 +1,23 @@
+{
+  "name": "Extra",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Extra name"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "ExtraGroup ID"
+    },
+    "price": {
+      "type": "number",
+      "default": 0,
+      "description": "Additional price in TL"
+    }
+  },
+  "required": [
+    "name",
+    "group_id"
+  ]
+}

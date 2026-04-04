@@ -1,0 +1,33 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Product name"
+    },
+    "category_id": {
+      "type": "string",
+      "description": "Category ID"
+    },
+    "base_price": {
+      "type": "number",
+      "description": "Base price in TL"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Product image URL"
+    },
+    "extra_group_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of ExtraGroup IDs attached to this product"
+    }
+  },
+  "required": [
+    "name",
+    "base_price"
+  ]
+}

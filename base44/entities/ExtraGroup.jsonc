@@ -1,0 +1,23 @@
+{
+  "name": "ExtraGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Group name (e.g. Porsiyon, Soslar)"
+    },
+    "selection_type": {
+      "type": "string",
+      "enum": [
+        "single_required",
+        "multiple"
+      ],
+      "default": "multiple",
+      "description": "single_required = must pick one, multiple = pick any"
+    }
+  },
+  "required": [
+    "name",
+    "selection_type"
+  ]
+}

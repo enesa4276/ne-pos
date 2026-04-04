@@ -1,0 +1,89 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_type": {
+      "type": "string",
+      "enum": [
+        "dine_in",
+        "takeaway"
+      ],
+      "description": "Masada or Gel-Al"
+    },
+    "table_id": {
+      "type": "string",
+      "description": "RestaurantTable ID, null for takeaway"
+    },
+    "table_name": {
+      "type": "string",
+      "description": "Table name for display"
+    },
+    "items": {
+      "type": "array",
+      "description": "List of order items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "base_price": {
+            "type": "number"
+          },
+          "extras": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "subtotal": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "paid",
+        "cancelled"
+      ],
+      "default": "open"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "card"
+      ],
+      "description": "Payment method used"
+    },
+    "total": {
+      "type": "number",
+      "description": "Grand total"
+    },
+    "sent_to_kitchen": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "order_type",
+    "status"
+  ]
+}
