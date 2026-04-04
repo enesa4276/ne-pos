@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Banknote, CreditCard, Check, XCircle, Loader2, Delete } from 'lucide-react';
+import { Banknote, CreditCard, Check, XCircle, Loader2, Delete, Clock } from 'lucide-react';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 const NUMPAD = ['7','8','9','4','5','6','1','2','3','C','0','.'];
@@ -108,7 +109,7 @@ function CardPayment({ total, onComplete, onFail }) {
   return null;
 }
 
-export default function PaymentDialog({ open, onClose, total, onComplete }) {
+export default function PaymentDialog({ open, onClose, total, onComplete, onPayLater }) {
   const [method, setMethod] = useState(null);
   const [failed, setFailed] = useState(false);
 
@@ -142,27 +143,45 @@ export default function PaymentDialog({ open, onClose, total, onComplete }) {
         )}
 
         {!method && !failed && (
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <button
-              onClick={() => setMethod('cash')}
-              className={cn(
-                "flex flex-col items-center gap-3 p-8 rounded-2xl border-2 transition-all",
-                "hover:border-primary hover:bg-primary/5 border-border"
-              )}
-            >
-              <Banknote className="h-12 w-12 text-accent" />
-              <span className="font-bold text-lg">Nakit</span>
-            </button>
-            <button
-              onClick={() => setMethod('card')}
-              className={cn(
-                "flex flex-col items-center gap-3 p-8 rounded-2xl border-2 transition-all",
-                "hover:border-primary hover:bg-primary/5 border-border"
-              )}
-            >
-              <CreditCard className="h-12 w-12 text-primary" />
-              <span className="font-bold text-lg">Kredi Kartı</span>
-            </button>
+          <div className="space-y-4 py-2">
+            <div className="text-center">
+              <p className="text-muted-foreground text-sm">Toplam Tutar</p>
+              <p className="text-3xl font-bold text-primary">₺{total.toFixed(2)}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setMethod('cash')}
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
+                  "hover:border-primary hover:bg-primary/5 border-border"
+                )}
+              >
+                <Banknote className="h-10 w-10 text-accent" />
+                <span className="font-bold text-base">Nakit</span>
+              </button>
+              <button
+                onClick={() => setMethod('card')}
+                className={cn(
+                  "flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
+                  "hover:border-primary hover:bg-primary/5 border-border"
+                )}
+              >
+                <CreditCard className="h-10 w-10 text-primary" />
+                <span className="font-bold text-base">Kredi Kartı</span>
+              </button>
+            </div>
+            {onPayLater && (
+              <button
+                onClick={onPayLater}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all",
+                  "hover:border-amber-500/50 hover:bg-amber-500/5 border-border text-muted-foreground hover:text-amber-600"
+                )}
+              >
+                <Clock className="h-5 w-5" />
+                <span className="font-semibold">Ödemeyi Sonra Al</span>
+              </button>
+            )}
           </div>
         )}
 

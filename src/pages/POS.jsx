@@ -118,6 +118,22 @@ export default function POS() {
   };
 
   const handleSendKitchen = async () => {
+    // Sadece mutfak fişi yazdır, sipariş oluşturma
+    setPrintMode('kitchen');
+    setTimeout(() => {
+      window.print();
+      setPrintMode(null);
+      toast.success('Mutfağa gönderildi!');
+    }, 200);
+  };
+
+  const handlePayment = (total) => {
+    setPaymentTotal(total);
+    setShowPayment(true);
+  };
+
+  const handlePayLater = async () => {
+    setShowPayment(false);
     const subtotal = cartItems.reduce((s, i) => s + i.subtotal, 0);
     const total = subtotal + subtotal * 0.10;
 
@@ -135,19 +151,9 @@ export default function POS() {
       await updateTable.mutateAsync({ id: tableId, data: { status: 'occupied' } });
     }
 
-    setPrintMode('kitchen');
-    setTimeout(() => {
-      window.print();
-      setPrintMode(null);
-      toast.success('Mutfağa gönderildi!');
-      setCartItems([]);
-      navigate('/');
-    }, 200);
-  };
-
-  const handlePayment = (total) => {
-    setPaymentTotal(total);
-    setShowPayment(true);
+    toast.success('Sipariş kaydedildi!');
+    setCartItems([]);
+    navigate('/');
   };
 
   const handlePaymentComplete = async (method) => {
@@ -246,6 +252,7 @@ export default function POS() {
         onClose={() => setShowPayment(false)}
         total={paymentTotal}
         onComplete={handlePaymentComplete}
+        onPayLater={handlePayLater}
       />
 
       {/* Print Templates (hidden) */}
