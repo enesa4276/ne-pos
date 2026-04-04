@@ -1,0 +1,38 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Restaurant / company name shown on receipts"
+    },
+    "vat_number": {
+      "type": "string",
+      "description": "VAT / BTW number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Full address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "email_receipt": {
+      "type": "string",
+      "description": "Contact email shown on receipt"
+    },
+    "receipt_footer": {
+      "type": "string",
+      "description": "Custom thank-you message on receipt"
+    }
+  }
+}

@@ -85,6 +85,21 @@ export const translations = {
     thankYou: 'Bizi tercih ettiğiniz için teşekkürler!',
     vatLabel: 'KDV (%21)',
 
+    // Account
+    account: 'Hesap',
+    accountInfo: 'Hesap Bilgileri',
+    logout: 'Çıkış Yap',
+    receiptSettings: 'Bon / Fiş Ayarları',
+    companyName: 'Şirket / Restoran Adı',
+    vatNumber: 'Vergi Numarası (BTW/TVA)',
+    address: 'Adres',
+    phone: 'Telefon',
+    emailReceipt: 'E-posta (bonda görünür)',
+    receiptFooter: 'Bon Alt Mesajı',
+    savedSuccess: 'Kaydedildi!',
+    saving: 'Kaydediliyor...',
+    saveSettings: 'Ayarları Kaydet',
+
     // Table status
     empty: 'Boş',
     occupied: 'Dolu',
@@ -184,6 +199,20 @@ export const translations = {
     confirm: 'Confirm',
     wrongCode: 'Wrong code',
     deleted: 'Deleted',
+
+    account: 'Account',
+    accountInfo: 'Account Info',
+    logout: 'Log Out',
+    receiptSettings: 'Receipt Settings',
+    companyName: 'Company / Restaurant Name',
+    vatNumber: 'VAT Number',
+    address: 'Address',
+    phone: 'Phone',
+    emailReceipt: 'Email (shown on receipt)',
+    receiptFooter: 'Receipt Footer Message',
+    savedSuccess: 'Saved!',
+    saving: 'Saving...',
+    saveSettings: 'Save Settings',
   },
 
   nl: {
@@ -272,6 +301,20 @@ export const translations = {
     confirm: 'Bevestigen',
     wrongCode: 'Verkeerde code',
     deleted: 'Verwijderd',
+
+    account: 'Account',
+    accountInfo: 'Accountgegevens',
+    logout: 'Afmelden',
+    receiptSettings: 'Bon-instellingen',
+    companyName: 'Bedrijfs- / Restaurantnaam',
+    vatNumber: 'BTW-nummer',
+    address: 'Adres',
+    phone: 'Telefoon',
+    emailReceipt: 'E-mail (op bon)',
+    receiptFooter: 'Voettekst bon',
+    savedSuccess: 'Opgeslagen!',
+    saving: 'Opslaan...',
+    saveSettings: 'Instellingen Opslaan',
   },
 };
 

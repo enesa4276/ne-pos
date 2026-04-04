@@ -1,15 +1,17 @@
 import React from 'react';
 import moment from 'moment';
+import { formatCurrency } from '@/lib/i18n';
 
-export function KitchenReceipt({ order }) {
+export function KitchenReceipt({ order, t }) {
   if (!order) return null;
+  const tr = t || ((k) => k);
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
       <div className="print-title text-center text-xl font-bold border-b-2 border-dashed border-black pb-2 mb-3">
-        MUTFAK FİŞİ
+        {tr('kitchenTicket')}
       </div>
       <div className="text-center text-lg font-bold mb-2">
-        {order.order_type === 'takeaway' ? '*** PAKET ***' : order.table_name || 'Masa'}
+        {order.order_type === 'takeaway' ? tr('package') : order.table_name || tr('tables')}
       </div>
       <div className="text-center text-sm mb-4">
         {moment().format('DD.MM.YYYY HH:mm')}
@@ -34,31 +36,38 @@ export function KitchenReceipt({ order }) {
   );
 }
 
-export function CustomerReceipt({ order, total }) {
+export function CustomerReceipt({ order, total, t, companyInfo }) {
   if (!order) return null;
+  const tr = t || ((k) => k);
+  const ci = companyInfo || {};
   const subtotal = order.items?.reduce((s, i) => s + i.subtotal, 0) || 0;
-  const tax = subtotal * 0.10;
+  const tax = subtotal * 0.21;
 
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
       <div className="print-title text-center text-xl font-bold mb-1">
-        RESTORAN ADI
+        {ci.company_name || 'RestoPOS'}
       </div>
+      {ci.vat_number && (
+        <div className="text-center text-xs">
+          BTW/TVA: {ci.vat_number}
+        </div>
+      )}
       <div className="text-center text-xs mb-3">
-        Adres Bilgisi • Tel: 0212 000 00 00
+        {[ci.address, ci.phone, ci.email_receipt].filter(Boolean).join(' • ') || ''}
       </div>
       <div className="border-t border-dashed border-black pt-2 text-sm mb-2">
         <div className="flex justify-between">
-          <span>{order.order_type === 'takeaway' ? 'Paket' : order.table_name}</span>
+          <span>{order.order_type === 'takeaway' ? tr('takeaway') : order.table_name}</span>
           <span>{moment().format('DD.MM.YYYY HH:mm')}</span>
         </div>
       </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-black">
-            <th className="text-left py-1">Ürün</th>
-            <th className="text-center">Adet</th>
-            <th className="text-right">Tutar</th>
+            <th className="text-left py-1">{tr('product')}</th>
+            <th className="text-center">{tr('quantity')}</th>
+            <th className="text-right">{tr('amount')}</th>
           </tr>
         </thead>
         <tbody>
@@ -67,11 +76,11 @@ export function CustomerReceipt({ order, total }) {
               <tr>
                 <td className="py-1">{item.product_name}</td>
                 <td className="text-center">{item.quantity}</td>
-                <td className="text-right">₺{item.subtotal.toFixed(2)}</td>
+                <td className="text-right">{formatCurrency(item.subtotal)}</td>
               </tr>
               {item.extras?.map((e, j) => (
                 <tr key={j}>
-                  <td className="pl-2 text-xs" colSpan={2}>+ {e.name} (+₺{e.price.toFixed(2)})</td>
+                  <td className="pl-2 text-xs" colSpan={2}>+ {e.name} (+{formatCurrency(e.price)})</td>
                   <td></td>
                 </tr>
               ))}
@@ -80,14 +89,19 @@ export function CustomerReceipt({ order, total }) {
         </tbody>
       </table>
       <div className="border-t border-dashed border-black mt-2 pt-2 text-sm">
-        <div className="flex justify-between"><span>Ara Toplam</span><span>₺{subtotal.toFixed(2)}</span></div>
-        <div className="flex justify-between"><span>KDV (%10)</span><span>₺{tax.toFixed(2)}</span></div>
+        <div className="flex justify-between"><span>{tr('subtotal')}</span><span>{formatCurrency(subtotal)}</span></div>
+        <div className="flex justify-between"><span>{tr('vatLabel')}</span><span>{formatCurrency(tax)}</span></div>
         <div className="flex justify-between text-lg font-bold mt-1 pt-1 border-t border-black">
-          <span>TOPLAM</span><span>₺{(total || subtotal + tax).toFixed(2)}</span>
+          <span>{tr('total')}</span><span>{formatCurrency(total || subtotal + tax)}</span>
         </div>
       </div>
-      <div className="text-center text-xs mt-4">
-        Bizi tercih ettiğiniz için teşekkürler!
+      {ci.vat_number && (
+        <div className="text-center text-xs mt-2 border-t border-dashed border-black pt-2">
+          BTW/TVA: {ci.vat_number}
+        </div>
+      )}
+      <div className="text-center text-xs mt-3">
+        {ci.receipt_footer || tr('thankYou')}
       </div>
     </div>
   );

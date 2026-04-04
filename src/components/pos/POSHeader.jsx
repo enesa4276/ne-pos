@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2 } from 'lucide-react';
+import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2, UserCircle } from 'lucide-react';
 import { useLang } from '@/lib/LanguageContext';
 import { LANGUAGES } from '@/lib/i18n';
 
@@ -40,6 +40,12 @@ export default function POSHeader({ darkMode, onToggleDark }) {
           <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">{t('admin')}</span>
+          </Button>
+        </Link>
+        <Link to="/account">
+          <Button variant="ghost" size="sm" className="gap-2 rounded-xl">
+            <UserCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('account')}</span>
           </Button>
         </Link>
 

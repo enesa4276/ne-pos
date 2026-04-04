@@ -212,7 +212,7 @@ export default function Orders() {
       />
 
       {/* Print Template */}
-      {printOrder && <CustomerReceipt order={printOrder} total={printOrder.total} />}
+      {printOrder && <CustomerReceipt order={printOrder} total={printOrder.total} t={t} companyInfo={user} />}
 
       {/* 🔒 Secret Delete Modal */}
       {secretDeleteOrder && (

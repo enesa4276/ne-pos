@@ -13,10 +13,12 @@ import CartPanel from '@/components/pos/CartPanel';
 import ExtrasPopup from '@/components/pos/ExtrasPopup';
 import PaymentDialog from '@/components/pos/PaymentDialog';
 import { KitchenReceipt, CustomerReceipt } from '@/components/pos/ReceiptPrint';
+import { useLang } from '@/lib/LanguageContext';
 
 export default function POS() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLang();
   const urlParams = new URLSearchParams(window.location.search);
   const tableId = urlParams.get('tableId');
   const tableName = urlParams.get('tableName');
@@ -262,8 +264,15 @@ export default function POS() {
       />
 
       {/* Print Templates (hidden) */}
-      {printMode === 'kitchen' && <KitchenReceipt order={currentOrder} />}
-      {printMode === 'customer' && <CustomerReceipt order={currentOrder} total={paymentTotal} />}
+      {printMode === 'kitchen' && <KitchenReceipt order={currentOrder} t={t} />}
+      {printMode === 'customer' && (
+        <CustomerReceipt
+          order={currentOrder}
+          total={paymentTotal}
+          t={t}
+          companyInfo={user}
+        />
+      )}
     </div>
   );
 }
