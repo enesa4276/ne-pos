@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import POSHeader from './pos/POSHeader';
+import { useLang } from '@/lib/LanguageContext';
 
 export default function Layout() {
+  const { t } = useLang();
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('pos-dark-mode');
     return saved ? JSON.parse(saved) : true;
@@ -26,7 +28,7 @@ export default function Layout() {
           rel="noopener noreferrer"
           className="hover:text-primary transition-colors"
         >
-          Ne-Pa Yazılım &amp; Grafik tarafından geliştirilmiştir
+          {t('poweredBy')}
         </a>
       </footer>
     </div>
