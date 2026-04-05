@@ -119,6 +119,22 @@ export const translations = {
     confirm: 'Onayla',
     wrongCode: 'Yanlış kod',
     deleted: 'Silindi',
+
+    // Wix Integration
+    wixIntegration: 'Wix Entegrasyonu',
+    wixHowToTitle: 'Nasıl kurulur?',
+    wixStep1: 'Wix sitenizde Otomasyonlar > Yeni Otomasyon açın.',
+    wixStep2: 'Tetikleyici: Yeni Sipariş Oluşturuldu seçin.',
+    wixStep3: 'Eylem: HTTP Talebi Gönder > URL olarak webhook adresinizi girin.',
+    wixStep4: 'Aşağıdaki Webhook Secret\'ı Wix otomasyonunuzdaki "Gizli Anahtar" alanına girin.',
+    wixStep5: 'Wix Admin panelinden sitenizin Site ID\'sini kopyalayıp aşağıya yapıştırın.',
+    wixWebhookSecret: 'Webhook Secret',
+    wixSiteId: 'Wix Site ID',
+    onlineOrders: 'Online Siparişler',
+    noOnlineOrders: 'Henüz online sipariş yok',
+    onlineOrdersDone: 'Tamamlanan / İptal',
+    statusUpdated: 'Durum güncellendi',
+    wixNotConfigured: 'Online siparişler aktif değil. Hesap ayarlarından Wix entegrasyonunu kurun.',
   },
 
   en: {
@@ -214,6 +230,22 @@ export const translations = {
     confirm: 'Confirm',
     wrongCode: 'Wrong code',
     deleted: 'Deleted',
+
+    // Wix Integration
+    wixIntegration: 'Wix Integration',
+    wixHowToTitle: 'How to set up?',
+    wixStep1: 'In your Wix site, go to Automations > New Automation.',
+    wixStep2: 'Trigger: Select "New Order Created".',
+    wixStep3: 'Action: Send HTTP Request > Enter your webhook URL.',
+    wixStep4: 'Enter the Webhook Secret below into the "Secret Key" field in Wix.',
+    wixStep5: 'Copy your Site ID from the Wix Admin panel and paste it below.',
+    wixWebhookSecret: 'Webhook Secret',
+    wixSiteId: 'Wix Site ID',
+    onlineOrders: 'Online Orders',
+    noOnlineOrders: 'No online orders yet',
+    onlineOrdersDone: 'Completed / Cancelled',
+    statusUpdated: 'Status updated',
+    wixNotConfigured: 'Online orders not active. Set up Wix integration in Account settings.',
 
     account: 'Account',
     accountInfo: 'Account Info',
@@ -324,6 +356,22 @@ export const translations = {
     confirm: 'Bevestigen',
     wrongCode: 'Verkeerde code',
     deleted: 'Verwijderd',
+
+    // Wix Integration
+    wixIntegration: 'Wix Integratie',
+    wixHowToTitle: 'Hoe instellen?',
+    wixStep1: 'Ga in uw Wix-site naar Automatiseringen > Nieuwe Automatisering.',
+    wixStep2: 'Trigger: Selecteer "Nieuwe bestelling aangemaakt".',
+    wixStep3: 'Actie: HTTP-verzoek verzenden > Voer uw webhook-URL in.',
+    wixStep4: 'Voer de onderstaande Webhook Secret in het veld "Geheime sleutel" in Wix in.',
+    wixStep5: 'Kopieer uw Site ID uit het Wix-beheerpaneel en plak het hieronder.',
+    wixWebhookSecret: 'Webhook Secret',
+    wixSiteId: 'Wix Site ID',
+    onlineOrders: 'Online Bestellingen',
+    noOnlineOrders: 'Nog geen online bestellingen',
+    onlineOrdersDone: 'Voltooid / Geannuleerd',
+    statusUpdated: 'Status bijgewerkt',
+    wixNotConfigured: 'Online bestellingen niet actief. Stel de Wix-integratie in via Accountinstellingen.',
 
     account: 'Account',
     accountInfo: 'Accountgegevens',

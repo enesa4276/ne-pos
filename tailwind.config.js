@@ -92,6 +92,13 @@ module.exports = {
     'bg-emerald-500', 'bg-emerald-500/20', 'border-emerald-500/40', 'text-emerald-400',
     'bg-red-500', 'bg-red-500/20', 'border-red-500/40', 'text-red-400',
     'bg-amber-500', 'bg-amber-500/20', 'border-amber-500/40', 'text-amber-400',
+    'bg-amber-500/20', 'text-amber-600', 'border-amber-500/40',
+    'bg-blue-500/20', 'text-blue-600', 'border-blue-500/40',
+    'bg-purple-500/20', 'text-purple-600', 'border-purple-500/40',
+    'bg-green-500/20', 'text-green-600', 'border-green-500/40',
+    'bg-orange-500/20', 'text-orange-600', 'border-orange-500/40',
+    'bg-gray-500/20', 'text-gray-500', 'border-gray-500/40',
+    'w-1/2', 'w-full',
   ],
   plugins: [require("tailwindcss-animate")],
 }

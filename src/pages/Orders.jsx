@@ -60,8 +60,10 @@ export default function Orders() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
   });
 
+  const hasWixIntegration = !!(user?.wix_site_id);
+
   // Split: Wix orders vs POS orders
-  const wixOrders = orders.filter(o => o.order_source === 'wix');
+  const wixOrders = hasWixIntegration ? orders.filter(o => o.order_source === 'wix') : [];
   const posOrders = orders.filter(o => o.order_source !== 'wix');
 
   const filteredPosOrders = filter === 'all'
@@ -88,7 +90,7 @@ export default function Orders() {
 
   const handleWixStatusChange = async (orderId, newStatus) => {
     await updateOrder.mutateAsync({ id: orderId, data: { status: newStatus } });
-    toast.success('Durum güncellendi');
+    toast.success(t('statusUpdated'));
   };
 
   const handleSecretClick = (order) => {
@@ -133,53 +135,55 @@ export default function Orders() {
       {/* Split screen layout */}
       <div className="flex flex-1 overflow-hidden divide-x divide-border">
 
-        {/* LEFT: Online / Wix Orders */}
-        <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
-          <div className="p-3 border-b border-border bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-500" />
-              <h2 className="font-bold text-sm">Online Siparişler</h2>
-              {activeWixOrders.length > 0 && (
-                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
-                  {activeWixOrders.length}
-                </span>
-              )}
+        {/* LEFT: Online / Wix Orders — only if wix is configured */}
+        {hasWixIntegration && (
+          <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
+            <div className="p-3 border-b border-border bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-blue-500" />
+                <h2 className="font-bold text-sm">{t('onlineOrders')}</h2>
+                {activeWixOrders.length > 0 && (
+                  <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                    {activeWixOrders.length}
+                  </span>
+                )}
+              </div>
             </div>
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-3">
+                {activeWixOrders.length === 0 && doneWixOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-12 text-sm">
+                    {t('noOnlineOrders')}
+                  </p>
+                )}
+                {activeWixOrders.map(order => (
+                  <WixOrderCard
+                    key={order.id}
+                    order={order}
+                    onStatusChange={handleWixStatusChange}
+                    loading={updateOrder.isPending}
+                  />
+                ))}
+                {doneWixOrders.length > 0 && (
+                  <>
+                    <p className="text-xs text-muted-foreground font-medium pt-2">{t('onlineOrdersDone')}</p>
+                    {doneWixOrders.slice(0, 20).map(order => (
+                      <WixOrderCard
+                        key={order.id}
+                        order={order}
+                        onStatusChange={handleWixStatusChange}
+                        loading={updateOrder.isPending}
+                      />
+                    ))}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
           </div>
-          <ScrollArea className="flex-1">
-            <div className="p-3 space-y-3">
-              {activeWixOrders.length === 0 && doneWixOrders.length === 0 && (
-                <p className="text-center text-muted-foreground py-12 text-sm">
-                  Henüz online sipariş yok
-                </p>
-              )}
-              {activeWixOrders.map(order => (
-                <WixOrderCard
-                  key={order.id}
-                  order={order}
-                  onStatusChange={handleWixStatusChange}
-                  loading={updateOrder.isPending}
-                />
-              ))}
-              {doneWixOrders.length > 0 && (
-                <>
-                  <p className="text-xs text-muted-foreground font-medium pt-2">Tamamlanan / İptal</p>
-                  {doneWixOrders.slice(0, 20).map(order => (
-                    <WixOrderCard
-                      key={order.id}
-                      order={order}
-                      onStatusChange={handleWixStatusChange}
-                      loading={updateOrder.isPending}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+        )}
 
-        {/* RIGHT: POS Orders */}
-        <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
+        {/* RIGHT: POS Orders — full width if no wix */}
+        <div className={`flex flex-col min-w-0 overflow-hidden ${hasWixIntegration ? 'w-1/2' : 'w-full'}`}>
           <div className="p-3 border-b border-border bg-card/50 shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <UtensilsCrossed className="h-4 w-4 text-primary" />

@@ -36,12 +36,11 @@ export function KitchenReceipt({ order, t }) {
   );
 }
 
-export function CustomerReceipt({ order, total, t, companyInfo }) {
+export function CustomerReceipt({ order, total: totalProp, t, companyInfo }) {
   if (!order) return null;
   const tr = t || ((k) => k);
   const ci = companyInfo || {};
-  const subtotal = order.items?.reduce((s, i) => s + i.subtotal, 0) || 0;
-  const tax = subtotal * 0.21;
+  const total = totalProp ?? order.items?.reduce((s, i) => s + i.subtotal, 0) ?? 0;
 
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
@@ -91,10 +90,8 @@ export function CustomerReceipt({ order, total, t, companyInfo }) {
         </tbody>
       </table>
       <div className="border-t border-dashed border-black mt-2 pt-2 text-sm">
-        <div className="flex justify-between"><span>{tr('subtotal')}</span><span>{formatCurrency(subtotal)}</span></div>
-        <div className="flex justify-between"><span>{tr('vatLabel')}</span><span>{formatCurrency(tax)}</span></div>
-        <div className="flex justify-between text-lg font-bold mt-1 pt-1 border-t border-black">
-          <span>{tr('total')}</span><span>{formatCurrency(total || subtotal + tax)}</span>
+        <div className="flex justify-between text-lg font-bold pt-1">
+          <span>{tr('total')}</span><span>{formatCurrency(total)}</span>
         </div>
       </div>
       {ci.vat_number && (

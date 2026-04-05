@@ -101,22 +101,22 @@ export default function Account() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="h-4 w-4 text-primary" />
-            Wix Entegrasyonu
+            {t('wixIntegration')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
-            <p className="font-semibold mb-1">Nasıl kurulur?</p>
+            <p className="font-semibold mb-1">{t('wixHowToTitle')}</p>
             <ol className="list-decimal list-inside space-y-1 text-xs">
-              <li>Wix sitenizde <b>Otomasyonlar</b> &gt; <b>Yeni Otomasyon</b> açın.</li>
-              <li>Tetikleyici: <b>Yeni Sipariş Oluşturuldu</b> seçin.</li>
-              <li>Eylem: <b>HTTP Talebi Gönder</b> &gt; URL olarak webhook adresinizi girin.</li>
-              <li>Aşağıdaki <b>Webhook Secret</b>'ı Wix otomasyonunuzdaki "Gizli Anahtar" alanına girin.</li>
-              <li>Wix Admin panelinden sitenizin <b>Site ID</b>'sini kopyalayıp aşağıya yapıştırın.</li>
+              <li>{t('wixStep1')}</li>
+              <li>{t('wixStep2')}</li>
+              <li>{t('wixStep3')}</li>
+              <li>{t('wixStep4')}</li>
+              <li>{t('wixStep5')}</li>
             </ol>
           </div>
-          {field('Webhook Secret', 'wix_webhook_secret', <Key className="h-3.5 w-3.5" />, 'Örn: mysecret123')}
-          {field('Wix Site ID', 'wix_site_id', <Store className="h-3.5 w-3.5" />, 'Örn: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
+          {field(t('wixWebhookSecret'), 'wix_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret123')}
+          {field(t('wixSiteId'), 'wix_site_id', <Store className="h-3.5 w-3.5" />, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
 
           <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4" />
