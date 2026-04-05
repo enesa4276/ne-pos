@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -61,6 +61,53 @@ export default function Orders() {
   });
 
   const hasWixIntegration = !!(user?.wix_site_id);
+
+  // --- Notification sound via Web Audio API ---
+  const playNotificationSound = () => {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playBeep = (freq, startTime, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.4, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    playBeep(880, ctx.currentTime, 0.15);
+    playBeep(1100, ctx.currentTime + 0.18, 0.15);
+    playBeep(1320, ctx.currentTime + 0.36, 0.2);
+  };
+
+  const notificationIntervalRef = useRef(null);
+  const pendingWixCount = hasWixIntegration
+    ? orders.filter(o => o.order_source === 'wix' && o.status === 'pending').length
+    : 0;
+
+  useEffect(() => {
+    if (pendingWixCount > 0) {
+      if (!notificationIntervalRef.current) {
+        playNotificationSound();
+        notificationIntervalRef.current = setInterval(() => {
+          playNotificationSound();
+        }, 15000);
+      }
+    } else {
+      if (notificationIntervalRef.current) {
+        clearInterval(notificationIntervalRef.current);
+        notificationIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (notificationIntervalRef.current) {
+        clearInterval(notificationIntervalRef.current);
+        notificationIntervalRef.current = null;
+      }
+    };
+  }, [pendingWixCount]);
 
   // Split: Wix orders vs POS orders
   const wixOrders = hasWixIntegration ? orders.filter(o => o.order_source === 'wix') : [];
