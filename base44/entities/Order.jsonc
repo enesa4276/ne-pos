@@ -61,9 +61,16 @@
       "enum": [
         "open",
         "paid",
-        "cancelled"
+        "cancelled",
+        "pending",
+        "accepted",
+        "preparing",
+        "ready_for_delivery_pickup",
+        "out_for_delivery",
+        "fulfilled"
       ],
-      "default": "open"
+      "default": "open",
+      "description": "Current status of the order"
     },
     "payment_method": {
       "type": "string",
@@ -71,7 +78,7 @@
         "cash",
         "card"
       ],
-      "description": "Payment method used"
+      "description": "Payment method used for POS orders"
     },
     "total": {
       "type": "number",
@@ -80,6 +87,59 @@
     "sent_to_kitchen": {
       "type": "boolean",
       "default": false
+    },
+    "order_source": {
+      "type": "string",
+      "enum": [
+        "pos_dine_in",
+        "pos_takeaway",
+        "wix"
+      ],
+      "default": "pos_dine_in",
+      "description": "Source of the order"
+    },
+    "wix_order_id": {
+      "type": "string",
+      "description": "Wix unique order ID"
+    },
+    "payment_status_wix": {
+      "type": "string",
+      "enum": [
+        "PAID",
+        "UNPAID",
+        "PARTIALLY_PAID",
+        "FULLY_REFUNDED",
+        "PARTIALLY_REFUNDED"
+      ],
+      "description": "Payment status from Wix"
+    },
+    "payment_method_wix": {
+      "type": "string",
+      "description": "Payment method from Wix (e.g. CreditCard, PayPal)"
+    },
+    "amount_due_wix": {
+      "type": "number",
+      "description": "Amount due from Wix order"
+    },
+    "delivery_address": {
+      "type": "string",
+      "description": "Full delivery address for online orders"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Customer name from Wix order"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Customer phone from Wix order"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Customer email from Wix order"
+    },
+    "wix_site_id": {
+      "type": "string",
+      "description": "Wix site ID this order belongs to"
     }
   },
   "required": [

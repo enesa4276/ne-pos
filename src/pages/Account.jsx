@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash } from 'lucide-react';
+import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store } from 'lucide-react';
 
 export default function Account() {
   const { user, isLoading } = useCurrentUser();
@@ -20,6 +20,8 @@ export default function Account() {
     phone: '',
     email_receipt: '',
     receipt_footer: '',
+    wix_webhook_secret: '',
+    wix_site_id: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -32,6 +34,8 @@ export default function Account() {
         phone: user.phone || '',
         email_receipt: user.email_receipt || '',
         receipt_footer: user.receipt_footer || '',
+        wix_webhook_secret: user.wix_webhook_secret || '',
+        wix_site_id: user.wix_site_id || '',
       });
     }
   }, [user]);
@@ -89,6 +93,35 @@ export default function Account() {
               {t('logout')}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Wix Integration Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            Wix Entegrasyonu
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
+            <p className="font-semibold mb-1">Nasıl kurulur?</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs">
+              <li>Wix sitenizde <b>Otomasyonlar</b> &gt; <b>Yeni Otomasyon</b> açın.</li>
+              <li>Tetikleyici: <b>Yeni Sipariş Oluşturuldu</b> seçin.</li>
+              <li>Eylem: <b>HTTP Talebi Gönder</b> &gt; URL olarak webhook adresinizi girin.</li>
+              <li>Aşağıdaki <b>Webhook Secret</b>'ı Wix otomasyonunuzdaki "Gizli Anahtar" alanına girin.</li>
+              <li>Wix Admin panelinden sitenizin <b>Site ID</b>'sini kopyalayıp aşağıya yapıştırın.</li>
+            </ol>
+          </div>
+          {field('Webhook Secret', 'wix_webhook_secret', <Key className="h-3.5 w-3.5" />, 'Örn: mysecret123')}
+          {field('Wix Site ID', 'wix_site_id', <Store className="h-3.5 w-3.5" />, 'Örn: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
+
+          <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
+            <Save className="h-4 w-4" />
+            {saving ? t('saving') : t('saveSettings')}
+          </Button>
         </CardContent>
       </Card>
 

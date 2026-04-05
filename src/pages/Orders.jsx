@@ -8,11 +8,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, UtensilsCrossed, CreditCard, Printer } from 'lucide-react';
+import { Loader2, Package, UtensilsCrossed, CreditCard, Printer, Globe } from 'lucide-react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import PaymentDialog from '@/components/pos/PaymentDialog';
 import { CustomerReceipt } from '@/components/pos/ReceiptPrint';
+import WixOrderCard from '@/components/orders/WixOrderCard';
 
 const STATUS_VARIANTS = {
   open: 'default',
@@ -20,9 +21,6 @@ const STATUS_VARIANTS = {
   cancelled: 'destructive',
 };
 
-// 🔒 GİZLİ SİLME: Bir siparişi silmek için sipariş kartına 5 kez hızlıca tıkla.
-// Sonra çıkan gizli onay kutusunda "STET" kodunu gir ve onayla.
-// Bu işlem siparişi tamamen siler, analizde de gözükmez.
 const SECRET_DELETE_CODE = 'STET';
 const SECRET_CLICK_COUNT = 5;
 
@@ -33,7 +31,6 @@ export default function Orders() {
   const [filter, setFilter] = useState('open');
   const [payingOrder, setPayingOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
-  // Secret delete state
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const [secretDeleteOrder, setSecretDeleteOrder] = useState(null);
@@ -63,9 +60,13 @@ export default function Orders() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
   });
 
-  const filteredOrders = filter === 'all'
-    ? orders
-    : orders.filter(o => o.status === filter);
+  // Split: Wix orders vs POS orders
+  const wixOrders = orders.filter(o => o.order_source === 'wix');
+  const posOrders = orders.filter(o => o.order_source !== 'wix');
+
+  const filteredPosOrders = filter === 'all'
+    ? posOrders
+    : posOrders.filter(o => o.status === filter);
 
   const handlePaymentComplete = async (method) => {
     if (!payingOrder) return;
@@ -85,7 +86,11 @@ export default function Orders() {
     }, 200);
   };
 
-  // Secret delete: 5 rapid clicks on order header
+  const handleWixStatusChange = async (orderId, newStatus) => {
+    await updateOrder.mutateAsync({ id: orderId, data: { status: newStatus } });
+    toast.success('Durum güncellendi');
+  };
+
   const handleSecretClick = (order) => {
     const id = order.id;
     if (!clickCountRef.current[id]) clickCountRef.current[id] = 0;
@@ -119,89 +124,148 @@ export default function Orders() {
     </div>
   );
 
+  // Active wix orders (not fulfilled/cancelled)
+  const activeWixOrders = wixOrders.filter(o => !['fulfilled', 'cancelled'].includes(o.status));
+  const doneWixOrders = wixOrders.filter(o => ['fulfilled', 'cancelled'].includes(o.status));
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border bg-card/50">
-        <h2 className="font-bold text-lg mb-3">{t('ordersTitle')}</h2>
-        <Tabs value={filter} onValueChange={setFilter}>
-          <TabsList>
-            <TabsTrigger value="open">{t('open')}</TabsTrigger>
-            <TabsTrigger value="paid">{t('paid')}</TabsTrigger>
-            <TabsTrigger value="cancelled">{t('cancelled')}</TabsTrigger>
-            <TabsTrigger value="all">{t('all')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Split screen layout */}
+      <div className="flex flex-1 overflow-hidden divide-x divide-border">
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3 max-w-4xl mx-auto">
-          {filteredOrders.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">{t('noOrders')}</p>
-          )}
-          {filteredOrders.map((order) => {
-            const stVariant = STATUS_VARIANTS[order.status] || 'default';
-            const stLabel = t(order.status) || order.status;
-            return (
-              <div key={order.id} className="bg-card rounded-2xl border border-border p-4 space-y-3">
-                <div
-                  className="flex items-center justify-between cursor-default select-none"
-                  onClick={() => handleSecretClick(order)}
-                >
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {order.order_type === 'takeaway'
-                      ? <Package className="h-4 w-4 text-accent" />
-                      : <UtensilsCrossed className="h-4 w-4 text-primary" />}
-                    <span className="font-bold text-sm">
-                      {order.order_type === 'takeaway' ? t('takeaway') : order.table_name || t('tables')}
-                    </span>
-                    <Badge variant={stVariant} className="text-xs">{stLabel}</Badge>
-                    {order.payment_method && (
-                      <Badge variant="outline" className="text-xs">
-                        {order.payment_method === 'cash' ? t('cash') : t('creditCard')}
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {moment(order.created_date).format('DD.MM.YYYY HH:mm')}
-                  </span>
-                </div>
-
-                <div className="space-y-1">
-                  {order.items?.map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span>
-                        {item.quantity}x {item.product_name}
-                        {item.extras?.length > 0 && (
-                          <span className="text-muted-foreground text-xs ml-1">
-                            ({item.extras.map(e => e.name).join(', ')})
-                          </span>
-                        )}
-                      </span>
-                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                    </div>
+        {/* LEFT: Online / Wix Orders */}
+        <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
+          <div className="p-3 border-b border-border bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-blue-500" />
+              <h2 className="font-bold text-sm">Online Siparişler</h2>
+              {activeWixOrders.length > 0 && (
+                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                  {activeWixOrders.length}
+                </span>
+              )}
+            </div>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-3">
+              {activeWixOrders.length === 0 && doneWixOrders.length === 0 && (
+                <p className="text-center text-muted-foreground py-12 text-sm">
+                  Henüz online sipariş yok
+                </p>
+              )}
+              {activeWixOrders.map(order => (
+                <WixOrderCard
+                  key={order.id}
+                  order={order}
+                  onStatusChange={handleWixStatusChange}
+                  loading={updateOrder.isPending}
+                />
+              ))}
+              {doneWixOrders.length > 0 && (
+                <>
+                  <p className="text-xs text-muted-foreground font-medium pt-2">Tamamlanan / İptal</p>
+                  {doneWixOrders.slice(0, 20).map(order => (
+                    <WixOrderCard
+                      key={order.id}
+                      order={order}
+                      onStatusChange={handleWixStatusChange}
+                      loading={updateOrder.isPending}
+                    />
                   ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
-                  <span className="font-bold text-primary text-lg">{formatCurrency(order.total)}</span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1 rounded-xl" onClick={() => handlePrint(order)}>
-                      <Printer className="h-4 w-4" />
-                      <span className="hidden sm:inline">{t('printReceipt')}</span>
-                    </Button>
-                    {order.status === 'open' && (
-                      <Button size="sm" className="gap-1 rounded-xl" onClick={() => setPayingOrder(order)}>
-                        <CreditCard className="h-4 w-4" />
-                        {t('takePayment')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                </>
+              )}
+            </div>
+          </ScrollArea>
         </div>
-      </ScrollArea>
+
+        {/* RIGHT: POS Orders */}
+        <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
+          <div className="p-3 border-b border-border bg-card/50 shrink-0">
+            <div className="flex items-center gap-2 mb-2">
+              <UtensilsCrossed className="h-4 w-4 text-primary" />
+              <h2 className="font-bold text-sm">{t('ordersTitle')}</h2>
+            </div>
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList className="h-8">
+                <TabsTrigger value="open" className="text-xs px-3">{t('open')}</TabsTrigger>
+                <TabsTrigger value="paid" className="text-xs px-3">{t('paid')}</TabsTrigger>
+                <TabsTrigger value="cancelled" className="text-xs px-3">{t('cancelled')}</TabsTrigger>
+                <TabsTrigger value="all" className="text-xs px-3">{t('all')}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-3">
+              {filteredPosOrders.length === 0 && (
+                <p className="text-center text-muted-foreground py-12 text-sm">{t('noOrders')}</p>
+              )}
+              {filteredPosOrders.map((order) => {
+                const stVariant = STATUS_VARIANTS[order.status] || 'default';
+                const stLabel = t(order.status) || order.status;
+                return (
+                  <div key={order.id} className="bg-card rounded-2xl border border-border p-3 space-y-2">
+                    <div
+                      className="flex items-center justify-between cursor-default select-none"
+                      onClick={() => handleSecretClick(order)}
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {order.order_type === 'takeaway'
+                          ? <Package className="h-4 w-4 text-accent" />
+                          : <UtensilsCrossed className="h-4 w-4 text-primary" />}
+                        <span className="font-bold text-sm">
+                          {order.order_type === 'takeaway' ? t('takeaway') : order.table_name || t('tables')}
+                        </span>
+                        <Badge variant={stVariant} className="text-xs">{stLabel}</Badge>
+                        {order.payment_method && (
+                          <Badge variant="outline" className="text-xs">
+                            {order.payment_method === 'cash' ? t('cash') : t('creditCard')}
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {moment(order.created_date).format('DD.MM HH:mm')}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {order.items?.map((item, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span>
+                            {item.quantity}x {item.product_name}
+                            {item.extras?.length > 0 && (
+                              <span className="text-muted-foreground text-xs ml-1">
+                                ({item.extras.map(e => e.name).join(', ')})
+                              </span>
+                            )}
+                          </span>
+                          <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border gap-2">
+                      <span className="font-bold text-primary">{formatCurrency(order.total)}</span>
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs px-2" onClick={() => handlePrint(order)}>
+                          <Printer className="h-3.5 w-3.5" />
+                          <span className="hidden md:inline">{t('printReceipt')}</span>
+                        </Button>
+                        {order.status === 'open' && (
+                          <Button size="sm" className="gap-1 rounded-xl text-xs px-2" onClick={() => setPayingOrder(order)}>
+                            <CreditCard className="h-3.5 w-3.5" />
+                            {t('takePayment')}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
 
       {/* Payment Dialog */}
       <PaymentDialog
