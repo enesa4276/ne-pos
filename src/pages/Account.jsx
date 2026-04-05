@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useLang } from '@/lib/LanguageContext';
@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check } from 'lucide-react';
+import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check, Upload, ImageIcon, Loader2 } from 'lucide-react';
 
 export default function Account() {
   const { data: user, isLoading } = useCurrentUser();
@@ -20,6 +21,10 @@ export default function Account() {
     phone: '',
     email_receipt: '',
     receipt_footer: '',
+    receipt_logo_url: '',
+    receipt_font: 'default',
+    receipt_paper_size: '80mm',
+    receipt_font_size: 'medium',
     wix_webhook_secret: '',
     wix_site_id: '',
     takeaway_webhook_secret: '',
@@ -29,6 +34,8 @@ export default function Account() {
   });
   const [saving, setSaving] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef(null);
 
   const handleCopy = (text, key) => {
     navigator.clipboard.writeText(text);
@@ -45,6 +52,10 @@ export default function Account() {
         phone: user.phone || '',
         email_receipt: user.email_receipt || '',
         receipt_footer: user.receipt_footer || '',
+        receipt_logo_url: user.receipt_logo_url || '',
+        receipt_font: user.receipt_font || 'default',
+        receipt_paper_size: user.receipt_paper_size || '80mm',
+        receipt_font_size: user.receipt_font_size || 'medium',
         wix_webhook_secret: user.wix_webhook_secret || '',
         wix_site_id: user.wix_site_id || '',
         takeaway_webhook_secret: user.takeaway_webhook_secret || '',
@@ -97,6 +108,34 @@ export default function Account() {
           {copiedKey === copyKey ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
         </Button>
       </div>
+    </div>
+  );
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, receipt_logo_url: file_url }));
+    setUploadingLogo(false);
+    toast.success('Logo yüklendi');
+  };
+
+  const selectField = (label, key, icon, options) => (
+    <div className="space-y-1.5">
+      <Label className="flex items-center gap-1.5 text-sm font-medium">
+        {icon}{label}
+      </Label>
+      <Select value={form[key]} onValueChange={val => setForm(f => ({ ...f, [key]: val }))}>
+        <SelectTrigger className="rounded-xl">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(o => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 
@@ -217,6 +256,53 @@ export default function Account() {
           {field(t('phone'), 'phone', <Phone className="h-3.5 w-3.5" />, '+32 9 000 00 00')}
           {field(t('emailReceipt'), 'email_receipt', <Mail className="h-3.5 w-3.5" />, 'info@restaurant.be')}
           {field(t('receiptFooter'), 'receipt_footer', <Receipt className="h-3.5 w-3.5" />, t('thankYou'))}
+
+          {/* Logo Upload */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-sm font-medium">
+              <ImageIcon className="h-3.5 w-3.5" />Fiş Logosu
+            </Label>
+            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+            <div className="flex items-center gap-3">
+              {form.receipt_logo_url && (
+                <img src={form.receipt_logo_url} alt="Logo" className="h-12 w-auto rounded-lg border border-border object-contain bg-white p-1" />
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl gap-2"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+              >
+                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploadingLogo ? 'Yükleniyor...' : 'Logo Yükle'}
+              </Button>
+              {form.receipt_logo_url && (
+                <Button type="button" variant="ghost" size="sm" className="text-destructive rounded-xl" onClick={() => setForm(f => ({ ...f, receipt_logo_url: '' }))}>
+                  Kaldır
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Visual Options */}
+          <div className="grid grid-cols-3 gap-3">
+            {selectField('Kağıt Boyutu', 'receipt_paper_size', <Receipt className="h-3.5 w-3.5" />, [
+              { value: '58mm', label: '58mm' },
+              { value: '80mm', label: '80mm' },
+            ])}
+            {selectField('Font Stili', 'receipt_font', <Receipt className="h-3.5 w-3.5" />, [
+              { value: 'default', label: 'Varsayılan' },
+              { value: 'monospace', label: 'Monospace' },
+              { value: 'serif', label: 'Serif' },
+            ])}
+            {selectField('Font Boyutu', 'receipt_font_size', <Receipt className="h-3.5 w-3.5" />, [
+              { value: 'small', label: 'Küçük' },
+              { value: 'medium', label: 'Orta' },
+              { value: 'large', label: 'Büyük' },
+            ])}
+          </div>
+
           <SaveBtn />
         </CardContent>
       </Card>

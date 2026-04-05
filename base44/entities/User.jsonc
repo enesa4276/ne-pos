@@ -34,6 +34,39 @@
       "type": "string",
       "description": "Custom footer message for receipts"
     },
+    "receipt_logo_url": {
+      "type": "string",
+      "description": "Logo image URL to display on receipts"
+    },
+    "receipt_font": {
+      "type": "string",
+      "enum": [
+        "default",
+        "monospace",
+        "serif"
+      ],
+      "default": "default",
+      "description": "Font style for receipts"
+    },
+    "receipt_paper_size": {
+      "type": "string",
+      "enum": [
+        "58mm",
+        "80mm"
+      ],
+      "default": "80mm",
+      "description": "Thermal paper width"
+    },
+    "receipt_font_size": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "default": "medium",
+      "description": "Font size for receipts"
+    },
     "wix_webhook_secret": {
       "type": "string",
       "description": "Secret key for validating incoming Wix webhooks"
