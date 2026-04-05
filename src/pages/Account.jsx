@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check } from 'lucide-react';
 
 export default function Account() {
-  const { user, isLoading } = useCurrentUser();
+  const { data: user, isLoading } = useCurrentUser();
   const { t } = useLang();
 
   const [form, setForm] = useState({

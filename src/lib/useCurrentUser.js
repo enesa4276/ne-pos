@@ -5,6 +5,6 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: Infinity,
+    staleTime: 0,
   });
 }
