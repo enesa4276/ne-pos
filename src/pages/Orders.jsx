@@ -89,8 +89,30 @@ export default function Orders() {
   };
 
   const handleWixStatusChange = async (orderId, newStatus) => {
+    // Find the order to get wix_order_id
+    const order = orders.find(o => o.id === orderId);
+    
+    // Update locally first
     await updateOrder.mutateAsync({ id: orderId, data: { status: newStatus } });
     toast.success(t('statusUpdated'));
+
+    // Push status update to Wix (fire and forget — don't block UI)
+    if (order?.wix_order_id) {
+      fetch('/functions/wix-update-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          newStatus,
+          wixOrderId: order.wix_order_id,
+          userEmail: user?.email,
+        }),
+      }).then(res => res.json()).then(data => {
+        if (!data.success && !data.skipped) {
+          console.warn('Wix status sync failed:', data);
+        }
+      }).catch(err => console.warn('Wix sync error:', err));
+    }
   };
 
   const handleSecretClick = (order) => {

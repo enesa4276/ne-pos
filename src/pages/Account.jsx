@@ -80,7 +80,7 @@ export default function Account() {
   );
 
   // Webhook URL is fixed per app — users just copy it
-  const webhookUrl = `${window.location.origin}/api/webhooks/wix`;
+  const webhookUrl = `${window.location.origin}/functions/wix-webhook`;
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 overflow-y-auto h-full">
