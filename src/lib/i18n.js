@@ -2,7 +2,7 @@
 export const translations = {
   tr: {
     // Nav
-    tables: 'Masalar',
+    tables: 'Sipariş Al',
     orders: 'Siparişler',
     analytics: 'Analiz',
     admin: 'Yönetim',
@@ -138,7 +138,7 @@ export const translations = {
   },
 
   en: {
-    tables: 'Tables',
+    tables: 'Take Order',
     orders: 'Orders',
     analytics: 'Analytics',
     admin: 'Admin',
@@ -264,7 +264,7 @@ export const translations = {
   },
 
   nl: {
-    tables: 'Tafels',
+    tables: 'Bestelling Opnemen',
     orders: 'Bestellingen',
     analytics: 'Analyse',
     admin: 'Beheer',
