@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store } from 'lucide-react';
+import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check } from 'lucide-react';
 
 export default function Account() {
   const { user, isLoading } = useCurrentUser();
@@ -24,6 +24,13 @@ export default function Account() {
     wix_site_id: '',
   });
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (user) {
@@ -72,8 +79,11 @@ export default function Account() {
     </div>
   );
 
+  // Webhook URL is fixed per app — users just copy it
+  const webhookUrl = `${window.location.origin}/api/webhooks/wix`;
+
   return (
-    <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 overflow-y-auto h-full">
       {/* User Info */}
       <Card>
         <CardHeader className="pb-3">
@@ -86,7 +96,7 @@ export default function Account() {
           <div className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
             <div>
               <p className="font-semibold">{user?.full_name || '—'}</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <p className="text-sm text-muted-foreground">{user?.email || '—'}</p>
             </div>
             <Button variant="destructive" size="sm" className="rounded-xl gap-2" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
@@ -105,6 +115,25 @@ export default function Account() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Webhook URL — read-only, copy button */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-sm font-medium">
+              <Globe className="h-3.5 w-3.5" />
+              Webhook URL
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input
+                readOnly
+                value={webhookUrl}
+                className="rounded-xl font-mono text-xs bg-secondary/50"
+              />
+              <Button size="icon" variant="outline" className="shrink-0 rounded-xl" onClick={() => handleCopy(webhookUrl)}>
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('wixStep3')}</p>
+          </div>
+
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
             <p className="font-semibold mb-1">{t('wixHowToTitle')}</p>
             <ol className="list-decimal list-inside space-y-1 text-xs">
