@@ -22,14 +22,18 @@ export default function Account() {
     receipt_footer: '',
     wix_webhook_secret: '',
     wix_site_id: '',
+    takeaway_webhook_secret: '',
+    takeaway_store_id: '',
+    uber_eats_webhook_secret: '',
+    uber_eats_store_id: '',
   });
   const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
 
-  const handleCopy = (text) => {
+  const handleCopy = (text, key) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   useEffect(() => {
@@ -43,6 +47,10 @@ export default function Account() {
         receipt_footer: user.receipt_footer || '',
         wix_webhook_secret: user.wix_webhook_secret || '',
         wix_site_id: user.wix_site_id || '',
+        takeaway_webhook_secret: user.takeaway_webhook_secret || '',
+        takeaway_store_id: user.takeaway_store_id || '',
+        uber_eats_webhook_secret: user.uber_eats_webhook_secret || '',
+        uber_eats_store_id: user.uber_eats_store_id || '',
       });
     }
   }, [user]);
@@ -67,8 +75,7 @@ export default function Account() {
   const field = (label, key, icon, placeholder = '') => (
     <div className="space-y-1.5">
       <Label className="flex items-center gap-1.5 text-sm font-medium">
-        {icon}
-        {label}
+        {icon}{label}
       </Label>
       <Input
         value={form[key]}
@@ -79,64 +86,64 @@ export default function Account() {
     </div>
   );
 
-  // Webhook URL is fixed per app — users just copy it
-  const webhookUrl = `${window.location.origin}/functions/wix-webhook`;
+  const webhookUrlRow = (url, copyKey) => (
+    <div className="space-y-1.5">
+      <Label className="flex items-center gap-1.5 text-sm font-medium">
+        <Globe className="h-3.5 w-3.5" />{t('webhookUrl')}
+      </Label>
+      <div className="flex items-center gap-2">
+        <Input readOnly value={url} className="rounded-xl font-mono text-xs bg-secondary/50" />
+        <Button size="icon" variant="outline" className="shrink-0 rounded-xl" onClick={() => handleCopy(url, copyKey)}>
+          {copiedKey === copyKey ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const origin = window.location.origin;
+
+  const SaveBtn = () => (
+    <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
+      <Save className="h-4 w-4" />
+      {saving ? t('saving') : t('saveSettings')}
+    </Button>
+  );
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 overflow-y-auto h-full">
+
       {/* User Info */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Mail className="h-4 w-4 text-primary" />
-            {t('accountInfo')}
+            <Mail className="h-4 w-4 text-primary" />{t('accountInfo')}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           <div className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
             <div>
               <p className="font-semibold">{user?.full_name || '—'}</p>
               <p className="text-sm text-muted-foreground">{user?.email || '—'}</p>
             </div>
             <Button variant="destructive" size="sm" className="rounded-xl gap-2" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              {t('logout')}
+              <LogOut className="h-4 w-4" />{t('logout')}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Wix Integration Settings */}
+      {/* Wix Integration */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="h-4 w-4 text-primary" />
-            {t('wixIntegration')}
+            <Globe className="h-4 w-4 text-blue-500" />{t('wixIntegration')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Webhook URL — read-only, copy button */}
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-sm font-medium">
-              <Globe className="h-3.5 w-3.5" />
-              Webhook URL
-            </Label>
-            <div className="flex items-center gap-2">
-              <Input
-                readOnly
-                value={webhookUrl}
-                className="rounded-xl font-mono text-xs bg-secondary/50"
-              />
-              <Button size="icon" variant="outline" className="shrink-0 rounded-xl" onClick={() => handleCopy(webhookUrl)}>
-                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">{t('wixStep3')}</p>
-          </div>
-
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
+          {webhookUrlRow(`${origin}/functions/wix-webhook`, 'wix')}
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
             <p className="font-semibold mb-1">{t('wixHowToTitle')}</p>
-            <ol className="list-decimal list-inside space-y-1 text-xs">
+            <ol className="list-decimal list-inside space-y-1">
               <li>{t('wixStep1')}</li>
               <li>{t('wixStep2')}</li>
               <li>{t('wixStep3')}</li>
@@ -146,20 +153,61 @@ export default function Account() {
           </div>
           {field(t('wixWebhookSecret'), 'wix_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret123')}
           {field(t('wixSiteId'), 'wix_site_id', <Store className="h-3.5 w-3.5" />, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
-
-          <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4" />
-            {saving ? t('saving') : t('saveSettings')}
-          </Button>
+          <SaveBtn />
         </CardContent>
       </Card>
 
-      {/* Company / Receipt Settings */}
+      {/* Takeaway.com Integration */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" />
-            {t('receiptSettings')}
+            <Store className="h-4 w-4 text-green-500" />{t('takeawayIntegration')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {webhookUrlRow(`${origin}/functions/takeaway-webhook`, 'takeaway')}
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-3 text-xs text-green-700 dark:text-green-300">
+            <p className="font-semibold mb-1">{t('takeawayHowToTitle')}</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>{t('takeawayStep1')}</li>
+              <li>{t('takeawayStep2')}</li>
+              <li>{t('takeawayStep3')}</li>
+            </ol>
+          </div>
+          {field(t('takeawayWebhookSecret'), 'takeaway_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret456')}
+          {field(t('takeawayStoreId'), 'takeaway_store_id', <Store className="h-3.5 w-3.5" />, '12345')}
+          <SaveBtn />
+        </CardContent>
+      </Card>
+
+      {/* Uber Eats Integration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Store className="h-4 w-4 text-purple-500" />{t('uberEatsIntegration')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {webhookUrlRow(`${origin}/functions/uber-eats-webhook`, 'uber')}
+          <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-3 text-xs text-purple-700 dark:text-purple-300">
+            <p className="font-semibold mb-1">{t('uberEatsHowToTitle')}</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>{t('uberEatsStep1')}</li>
+              <li>{t('uberEatsStep2')}</li>
+              <li>{t('uberEatsStep3')}</li>
+            </ol>
+          </div>
+          {field(t('uberEatsWebhookSecret'), 'uber_eats_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret789')}
+          {field(t('uberEatsStoreId'), 'uber_eats_store_id', <Store className="h-3.5 w-3.5" />, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
+          <SaveBtn />
+        </CardContent>
+      </Card>
+
+      {/* Receipt Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-primary" />{t('receiptSettings')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -169,13 +217,10 @@ export default function Account() {
           {field(t('phone'), 'phone', <Phone className="h-3.5 w-3.5" />, '+32 9 000 00 00')}
           {field(t('emailReceipt'), 'email_receipt', <Mail className="h-3.5 w-3.5" />, 'info@restaurant.be')}
           {field(t('receiptFooter'), 'receipt_footer', <Receipt className="h-3.5 w-3.5" />, t('thankYou'))}
-
-          <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4" />
-            {saving ? t('saving') : t('saveSettings')}
-          </Button>
+          <SaveBtn />
         </CardContent>
       </Card>
+
     </div>
   );
 }

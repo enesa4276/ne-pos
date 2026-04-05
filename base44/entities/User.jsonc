@@ -10,14 +10,6 @@
       ],
       "default": "user"
     },
-    "wix_webhook_secret": {
-      "type": "string",
-      "description": "Secret key for validating incoming Wix webhooks"
-    },
-    "wix_site_id": {
-      "type": "string",
-      "description": "The Wix site ID belonging to this restaurant"
-    },
     "company_name": {
       "type": "string",
       "description": "Company/Restaurant Name for receipts"
@@ -41,6 +33,30 @@
     "receipt_footer": {
       "type": "string",
       "description": "Custom footer message for receipts"
+    },
+    "wix_webhook_secret": {
+      "type": "string",
+      "description": "Secret key for validating incoming Wix webhooks"
+    },
+    "wix_site_id": {
+      "type": "string",
+      "description": "The Wix site ID belonging to this restaurant"
+    },
+    "takeaway_webhook_secret": {
+      "type": "string",
+      "description": "Secret key for validating incoming Takeaway.com webhooks"
+    },
+    "takeaway_store_id": {
+      "type": "string",
+      "description": "Takeaway.com restaurant/store ID"
+    },
+    "uber_eats_webhook_secret": {
+      "type": "string",
+      "description": "Secret key for validating incoming Uber Eats webhooks"
+    },
+    "uber_eats_store_id": {
+      "type": "string",
+      "description": "Uber Eats store/restaurant UUID"
     }
   }
 }

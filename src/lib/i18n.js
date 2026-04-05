@@ -135,6 +135,25 @@ export const translations = {
     onlineOrdersDone: 'Tamamlanan / İptal',
     statusUpdated: 'Durum güncellendi',
     wixNotConfigured: 'Online siparişler aktif değil. Hesap ayarlarından Wix entegrasyonunu kurun.',
+    webhookUrl: 'Webhook URL',
+
+    // Takeaway Integration
+    takeawayIntegration: 'Takeaway.com Entegrasyonu',
+    takeawayHowToTitle: 'Nasıl kurulur?',
+    takeawayStep1: 'Takeaway.com restoran panelinizde Ayarlar > API/Entegrasyon bölümüne gidin ve yukarıdaki URL\'yi girin.',
+    takeawayStep2: 'Takeaway.com\'un size verdiği Webhook Secret\'ı aşağıya girin.',
+    takeawayStep3: 'Restoran panelinizden Mağaza ID\'nizi kopyalayıp aşağıya yapıştırın.',
+    takeawayWebhookSecret: 'Webhook Secret',
+    takeawayStoreId: 'Takeaway.com Mağaza ID',
+
+    // Uber Eats Integration
+    uberEatsIntegration: 'Uber Eats Entegrasyonu',
+    uberEatsHowToTitle: 'Nasıl kurulur?',
+    uberEatsStep1: 'Uber Eats Manager > Ayarlar > Uygulama bölümüne gidin ve yukarıdaki Webhook URL\'yi girin.',
+    uberEatsStep2: 'Uber Eats\'ın size verdiği Webhook Secret\'ı aşağıya girin.',
+    uberEatsStep3: 'Uber Eats Manager panelinizden Mağaza UUID\'nizi kopyalayıp aşağıya yapıştırın.',
+    uberEatsWebhookSecret: 'Webhook Secret',
+    uberEatsStoreId: 'Uber Eats Mağaza ID',
   },
 
   en: {
@@ -246,6 +265,25 @@ export const translations = {
     onlineOrdersDone: 'Completed / Cancelled',
     statusUpdated: 'Status updated',
     wixNotConfigured: 'Online orders not active. Set up Wix integration in Account settings.',
+    webhookUrl: 'Webhook URL',
+
+    // Takeaway Integration
+    takeawayIntegration: 'Takeaway.com Integration',
+    takeawayHowToTitle: 'How to set up?',
+    takeawayStep1: 'In your Takeaway.com restaurant panel, go to Settings > API/Integration and enter the URL above.',
+    takeawayStep2: 'Enter the Webhook Secret provided by Takeaway.com below.',
+    takeawayStep3: 'Copy your Store ID from the restaurant panel and paste it below.',
+    takeawayWebhookSecret: 'Webhook Secret',
+    takeawayStoreId: 'Takeaway.com Store ID',
+
+    // Uber Eats Integration
+    uberEatsIntegration: 'Uber Eats Integration',
+    uberEatsHowToTitle: 'How to set up?',
+    uberEatsStep1: 'In Uber Eats Manager > Settings > Apps, enter the Webhook URL above.',
+    uberEatsStep2: 'Enter the Webhook Secret provided by Uber Eats below.',
+    uberEatsStep3: 'Copy your Store UUID from Uber Eats Manager and paste it below.',
+    uberEatsWebhookSecret: 'Webhook Secret',
+    uberEatsStoreId: 'Uber Eats Store ID',
 
     account: 'Account',
     accountInfo: 'Account Info',
@@ -372,6 +410,25 @@ export const translations = {
     onlineOrdersDone: 'Voltooid / Geannuleerd',
     statusUpdated: 'Status bijgewerkt',
     wixNotConfigured: 'Online bestellingen niet actief. Stel de Wix-integratie in via Accountinstellingen.',
+    webhookUrl: 'Webhook URL',
+
+    // Takeaway Integration
+    takeawayIntegration: 'Takeaway.com Integratie',
+    takeawayHowToTitle: 'Hoe instellen?',
+    takeawayStep1: 'Ga in uw Takeaway.com restaurantpaneel naar Instellingen > API/Integratie en voer de URL hierboven in.',
+    takeawayStep2: 'Voer het Webhook Secret in dat Takeaway.com u heeft gegeven.',
+    takeawayStep3: 'Kopieer uw Winkel ID uit het restaurantpaneel en plak het hieronder.',
+    takeawayWebhookSecret: 'Webhook Secret',
+    takeawayStoreId: 'Takeaway.com Winkel ID',
+
+    // Uber Eats Integration
+    uberEatsIntegration: 'Uber Eats Integratie',
+    uberEatsHowToTitle: 'Hoe instellen?',
+    uberEatsStep1: 'Ga in Uber Eats Manager > Instellingen > Apps en voer de Webhook URL hierboven in.',
+    uberEatsStep2: 'Voer het Webhook Secret in dat Uber Eats u heeft gegeven.',
+    uberEatsStep3: 'Kopieer uw Winkel UUID uit Uber Eats Manager en plak het hieronder.',
+    uberEatsWebhookSecret: 'Webhook Secret',
+    uberEatsStoreId: 'Uber Eats Winkel ID',
 
     account: 'Account',
     accountInfo: 'Accountgegevens',

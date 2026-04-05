@@ -93,7 +93,9 @@
       "enum": [
         "pos_dine_in",
         "pos_takeaway",
-        "wix"
+        "wix",
+        "takeaway_com",
+        "uber_eats"
       ],
       "default": "pos_dine_in",
       "description": "Source of the order"
@@ -127,19 +129,31 @@
     },
     "customer_name": {
       "type": "string",
-      "description": "Customer name from Wix order"
+      "description": "Customer name from online order"
     },
     "customer_phone": {
       "type": "string",
-      "description": "Customer phone from Wix order"
+      "description": "Customer phone from online order"
     },
     "customer_email": {
       "type": "string",
-      "description": "Customer email from Wix order"
+      "description": "Customer email from online order"
     },
     "wix_site_id": {
       "type": "string",
       "description": "Wix site ID this order belongs to"
+    },
+    "external_order_id": {
+      "type": "string",
+      "description": "Unique order ID from external platform (Takeaway, Uber Eats)"
+    },
+    "external_payment_status": {
+      "type": "string",
+      "description": "Payment status from external platform"
+    },
+    "external_payment_method": {
+      "type": "string",
+      "description": "Payment method from external platform"
     }
   },
   "required": [

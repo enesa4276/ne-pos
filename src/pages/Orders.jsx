@@ -61,6 +61,9 @@ export default function Orders() {
   });
 
   const hasWixIntegration = !!(user?.wix_site_id);
+  const hasTakeawayIntegration = !!(user?.takeaway_store_id);
+  const hasUberEatsIntegration = !!(user?.uber_eats_store_id);
+  const hasAnyOnlineIntegration = hasWixIntegration || hasTakeawayIntegration || hasUberEatsIntegration;
 
   // --- Notification sound via Web Audio API ---
   const playNotificationSound = () => {
@@ -83,8 +86,8 @@ export default function Orders() {
   };
 
   const notificationIntervalRef = useRef(null);
-  const pendingWixCount = hasWixIntegration
-    ? orders.filter(o => o.order_source === 'wix' && o.status === 'pending').length
+  const pendingWixCount = hasAnyOnlineIntegration
+    ? orders.filter(o => ['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source) && o.status === 'pending').length
     : 0;
 
   useEffect(() => {
@@ -109,9 +112,14 @@ export default function Orders() {
     };
   }, [pendingWixCount]);
 
-  // Split: Wix orders vs POS orders
-  const wixOrders = hasWixIntegration ? orders.filter(o => o.order_source === 'wix') : [];
-  const posOrders = orders.filter(o => o.order_source !== 'wix');
+  // Split: Online orders vs POS orders
+  const onlineOrders = orders.filter(o => ['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source));
+  const wixOrders = hasWixIntegration ? onlineOrders.filter(o => o.order_source === 'wix') : [];
+  const takeawayOrders = hasTakeawayIntegration ? onlineOrders.filter(o => o.order_source === 'takeaway_com') : [];
+  const uberEatsOrders = hasUberEatsIntegration ? onlineOrders.filter(o => o.order_source === 'uber_eats') : [];
+  const allOnlineOrders = [...wixOrders, ...takeawayOrders, ...uberEatsOrders]
+    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  const posOrders = orders.filter(o => !['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source));
 
   const filteredPosOrders = filter === 'all'
     ? posOrders
@@ -195,37 +203,31 @@ export default function Orders() {
     </div>
   );
 
-  // Active wix orders (not fulfilled/cancelled)
-  const activeWixOrders = wixOrders.filter(o => !['fulfilled', 'cancelled'].includes(o.status));
-  const doneWixOrders = wixOrders.filter(o => ['fulfilled', 'cancelled'].includes(o.status));
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Split screen layout */}
       <div className="flex flex-1 overflow-hidden divide-x divide-border">
 
-        {/* LEFT: Online / Wix Orders — only if wix is configured */}
-        {hasWixIntegration && (
+        {/* LEFT: Online Orders — if any platform is configured */}
+        {hasAnyOnlineIntegration && (
           <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
             <div className="p-3 border-b border-border bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-blue-500" />
                 <h2 className="font-bold text-sm">{t('onlineOrders')}</h2>
-                {activeWixOrders.length > 0 && (
+                {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length > 0 && (
                   <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
-                    {activeWixOrders.length}
+                    {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length}
                   </span>
                 )}
               </div>
             </div>
             <ScrollArea className="flex-1">
               <div className="p-3 space-y-3">
-                {activeWixOrders.length === 0 && doneWixOrders.length === 0 && (
-                  <p className="text-center text-muted-foreground py-12 text-sm">
-                    {t('noOnlineOrders')}
-                  </p>
+                {allOnlineOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-12 text-sm">{t('noOnlineOrders')}</p>
                 )}
-                {activeWixOrders.map(order => (
+                {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).map(order => (
                   <WixOrderCard
                     key={order.id}
                     order={order}
@@ -233,10 +235,10 @@ export default function Orders() {
                     loading={updateOrder.isPending}
                   />
                 ))}
-                {doneWixOrders.length > 0 && (
+                {allOnlineOrders.filter(o => ['fulfilled','cancelled'].includes(o.status)).length > 0 && (
                   <>
                     <p className="text-xs text-muted-foreground font-medium pt-2">{t('onlineOrdersDone')}</p>
-                    {doneWixOrders.slice(0, 20).map(order => (
+                    {allOnlineOrders.filter(o => ['fulfilled','cancelled'].includes(o.status)).slice(0, 20).map(order => (
                       <WixOrderCard
                         key={order.id}
                         order={order}
@@ -252,7 +254,7 @@ export default function Orders() {
         )}
 
         {/* RIGHT: POS Orders — full width if no wix */}
-        <div className={`flex flex-col min-w-0 overflow-hidden ${hasWixIntegration ? 'w-1/2' : 'w-full'}`}>
+        <div className={`flex flex-col min-w-0 overflow-hidden ${hasAnyOnlineIntegration ? 'w-1/2' : 'w-full'}`}>
           <div className="p-3 border-b border-border bg-card/50 shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <UtensilsCrossed className="h-4 w-4 text-primary" />
