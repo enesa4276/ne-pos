@@ -179,7 +179,7 @@ export default function Account() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/wix-webhook`, 'wix')}
+          {webhookUrlRow(`${origin}/functions/wixWebhook`, 'wix')}
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
             <p className="font-semibold mb-1">{t('wixHowToTitle')}</p>
             <ol className="list-decimal list-inside space-y-1">
