@@ -191,7 +191,7 @@ export default function POS() {
       toast.success('Ödeme alındı!');
       setCartItems([]);
       navigate('/');
-    }, 200);
+    }, 800);
   };
 
   const handleCancel = () => {

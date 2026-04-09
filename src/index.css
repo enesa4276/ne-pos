@@ -96,6 +96,14 @@
   #print-area, #print-area * {
     visibility: visible !important;
   }
+  #print-area img {
+    display: block !important;
+    visibility: visible !important;
+    max-height: 60px !important;
+    max-width: 160px !important;
+    object-fit: contain !important;
+    margin: 0 auto 4mm auto !important;
+  }
   #print-area {
     position: absolute !important;
     left: 0 !important;
