@@ -44,6 +44,11 @@ export function CustomerReceipt({ order, total: totalProp, t, companyInfo }) {
 
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
+      {ci.receipt_logo_url && (
+        <div className="flex justify-center mb-2">
+          <img src={ci.receipt_logo_url} alt="Logo" style={{ maxHeight: '60px', maxWidth: '160px', objectFit: 'contain' }} />
+        </div>
+      )}
       {ci.company_name && (
         <div className="print-title text-center text-xl font-bold mb-1">
           {ci.company_name}
