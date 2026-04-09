@@ -14,13 +14,19 @@ Deno.serve(async (req) => {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  console.log("Wix webhook received:", JSON.stringify(payload));
+  console.log("Wix webhook received:", JSON.stringify(payload).substring(0, 500));
 
-  // Wix Restaurants order payload structure
-  const order = payload?.order || payload?.data?.order || payload;
+  // Wix Restaurants actual order data is under payload.data
+  const order = payload?.data || payload?.order || payload;
 
-  // Find site_id
-  const siteId = order?.fulfillmentInfo?.siteId || order?.siteId || payload?.siteId;
+  // Site ID lives in context.metaSiteId
+  const siteId =
+    order?.context?.metaSiteId ||
+    order?._context?.metaSiteId ||
+    payload?.siteId ||
+    order?.siteId;
+
+  console.log("Resolved siteId:", siteId);
 
   // Find the user with this wix_site_id
   let ownerEmail = null;
@@ -32,6 +38,7 @@ Deno.serve(async (req) => {
     ownerEmail = matchedUser.email;
     webhookSecret = matchedUser.wix_webhook_secret;
   }
+  console.log("Matched user:", ownerEmail);
 
   // Validate webhook secret if provided in header
   const incomingSecret = req.headers.get("x-wix-signature") || req.headers.get("x-webhook-secret");
@@ -42,16 +49,24 @@ Deno.serve(async (req) => {
   // Parse order items
   const lineItems = order?.lineItems || order?.items || [];
   const parsedItems = lineItems.map((item) => {
-    const extras = (item?.options || item?.modifiers || []).map((opt) => ({
-      name: opt?.name || opt?.title || "",
-      price: parseFloat(opt?.price?.amount || opt?.price || 0),
+    const modifiers = item?.modifierList || item?.options || item?.modifiers || [];
+    const extras = modifiers.map((mod) => ({
+      name: mod?.description || mod?.name || mod?.title || "",
+      price: parseFloat(mod?.price?.amount || mod?.price || 0),
     }));
-    const basePrice = parseFloat(item?.price?.amount || item?.price || item?.priceData?.price || 0);
+
+    // price field in Wix restaurants is like "€9,50" — strip non-numeric
+    const priceRaw = item?.price || item?.priceData?.price || "0";
+    const basePrice = parseFloat(String(priceRaw).replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
     const qty = parseInt(item?.quantity || 1);
     const extrasTotal = extras.reduce((s, e) => s + e.price, 0);
+    const variant = item?.variant || item?.option || "";
+
     return {
       product_id: item?.catalogReference?.catalogItemId || item?.id || "",
-      product_name: item?.productName?.original || item?.name || item?.title || "Unknown",
+      product_name: variant
+        ? `${item?.name || "Unknown"} (${variant})`
+        : (item?.name || item?.productName?.original || "Unknown"),
       base_price: basePrice,
       extras,
       quantity: qty,
@@ -59,12 +74,11 @@ Deno.serve(async (req) => {
     };
   });
 
-  const grandTotal = parseFloat(
-    order?.priceSummary?.total?.amount ||
-    order?.totals?.total ||
-    order?.total?.amount ||
-    0
-  );
+  // Total: try summary first, then sum from items
+  const lineItemsTotal = parsedItems.reduce((s, i) => s + i.subtotal, 0);
+  const grandTotal =
+    parseFloat(order?.priceSummary?.total?.amount || order?.totals?.total || 0) ||
+    lineItemsTotal;
 
   const deliveryAddress = [
     order?.shippingInfo?.shipmentDetails?.address?.addressLine1,
@@ -72,8 +86,14 @@ Deno.serve(async (req) => {
     order?.shippingInfo?.shipmentDetails?.address?.postalCode,
   ].filter(Boolean).join(", ");
 
-  const buyerInfo = order?.buyerInfo || order?.contactDetails || {};
-  const wixOrderId = order?.id || order?.orderId || payload?.orderId;
+  const rawContact = order?.contact || order?.buyerInfo || order?.contactDetails || {};
+  const customerName = rawContact?.firstName
+    ? `${rawContact.firstName} ${rawContact.lastName || ""}`.trim()
+    : rawContact?.name || "";
+  const customerPhone = rawContact?.phone || rawContact?.phones?.[0] || "";
+  const customerEmail = rawContact?.email || order?.email || "";
+
+  const wixOrderId = order?.orderId || order?.id || payload?.orderId;
 
   // Check for duplicate
   if (wixOrderId) {
@@ -93,14 +113,12 @@ Deno.serve(async (req) => {
     items: parsedItems,
     total: grandTotal,
     delivery_address: deliveryAddress || "",
-    customer_name: buyerInfo?.firstName
-      ? `${buyerInfo.firstName} ${buyerInfo.lastName || ""}`.trim()
-      : buyerInfo?.name || "",
-    customer_phone: buyerInfo?.phone || "",
-    customer_email: buyerInfo?.email || "",
+    customer_name: customerName,
+    customer_phone: customerPhone,
+    customer_email: customerEmail,
     payment_status_wix: order?.paymentStatus || "",
     payment_method_wix: order?.paymentInfo?.paymentMethod || "",
-    amount_due_wix: parseFloat(order?.priceSummary?.total?.amount || 0),
+    amount_due_wix: grandTotal,
     sent_to_kitchen: false,
   };
 
@@ -108,7 +126,7 @@ Deno.serve(async (req) => {
     newOrder.created_by = ownerEmail;
   }
 
-  await base44.asServiceRole.entities.Order.create(newOrder);
-  console.log("Order created successfully for site:", siteId);
+  const created = await base44.asServiceRole.entities.Order.create(newOrder);
+  console.log("Order created successfully:", created?.id, "for site:", siteId);
   return Response.json({ success: true });
 });
