@@ -204,7 +204,7 @@ export default function Account() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/takeaway-webhook`, 'takeaway')}
+          {webhookUrlRow(`${origin}/functions/takeawayWebhook`, 'takeaway')}
           <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-3 text-xs text-green-700 dark:text-green-300">
             <p className="font-semibold mb-1">{t('takeawayHowToTitle')}</p>
             <ol className="list-decimal list-inside space-y-1">
@@ -227,7 +227,7 @@ export default function Account() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/uber-eats-webhook`, 'uber')}
+          {webhookUrlRow(`${origin}/functions/uberEatsWebhook`, 'uber')}
           <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-3 text-xs text-purple-700 dark:text-purple-300">
             <p className="font-semibold mb-1">{t('uberEatsHowToTitle')}</p>
             <ol className="list-decimal list-inside space-y-1">
