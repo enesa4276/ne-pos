@@ -18,8 +18,14 @@ Deno.serve(async (req) => {
   try {
     accessToken = await base44.asServiceRole.connectors.getCurrentAppUserAccessToken(CONNECTOR_ID);
   } catch (e) {
-    return Response.json({ notConnected: true }, { status: 200 });
+    const msg = e?.message || String(e);
+    console.error('Token fetch error:', msg);
+    if (msg.includes('No active connection') || msg.includes('404')) {
+      return Response.json({ notConnected: true }, { status: 200 });
+    }
+    return Response.json({ error: msg }, { status: 500 });
   }
+  console.log('Got access token, length:', accessToken?.length);
 
   // Search Wix ecom orders — exclude FULFILLED and CANCELED
   const searchRes = await fetch("https://www.wixapis.com/ecom/v1/orders/search", {
