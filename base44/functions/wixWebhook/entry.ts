@@ -87,9 +87,11 @@ Deno.serve(async (req) => {
   ].filter(Boolean).join(", ");
 
   const rawContact = order?.contact || order?.buyerInfo || order?.contactDetails || {};
-  const customerName = rawContact?.firstName
-    ? `${rawContact.firstName} ${rawContact.lastName || ""}`.trim()
-    : rawContact?.name || "";
+  const firstName = rawContact?.firstName || rawContact?.first || '';
+  const lastName = rawContact?.lastName || rawContact?.last || '';
+  const customerName = firstName
+    ? `${firstName} ${lastName}`.trim()
+    : (typeof rawContact?.name === 'string' ? rawContact.name : '');
   const customerPhone = rawContact?.phone || rawContact?.phones?.[0] || "";
   const customerEmail = rawContact?.email || order?.email || "";
 
@@ -114,8 +116,8 @@ Deno.serve(async (req) => {
     total: grandTotal,
     delivery_address: deliveryAddress || "",
     customer_name: customerName,
-    customer_phone: customerPhone,
-    customer_email: customerEmail,
+    customer_phone: String(customerPhone || ''),
+    customer_email: String(customerEmail || ''),
     payment_status_wix: order?.paymentStatus || "",
     payment_method_wix: order?.paymentInfo?.paymentMethod || "",
     amount_due_wix: grandTotal,
