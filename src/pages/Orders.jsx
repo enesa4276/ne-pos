@@ -37,8 +37,24 @@ export default function Orders() {
   const [secretCode, setSecretCode] = useState('');
 
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['orders', user?.email],
-    queryFn: () => base44.entities.Order.filter({ created_by: user?.email }, '-created_date', 500),
+    queryKey: ['orders', user?.email, user?.wix_site_id, user?.takeaway_store_id, user?.uber_eats_store_id],
+    queryFn: async () => {
+      const byOwner = await base44.entities.Order.filter({ created_by: user?.email }, '-created_date', 500);
+      const ownerIds = new Set(byOwner.map(o => o.id));
+
+      // Also fetch old online orders that may have been created without created_by
+      const extras = [];
+      if (user?.wix_site_id) {
+        const wixOld = await base44.entities.Order.filter({ wix_site_id: user.wix_site_id }, '-created_date', 200);
+        wixOld.forEach(o => { if (!ownerIds.has(o.id)) extras.push(o); });
+      }
+      if (user?.takeaway_store_id) {
+        const taOld = await base44.entities.Order.filter({ external_order_id: { $exists: true }, order_source: 'takeaway_com' }, '-created_date', 100);
+        taOld.forEach(o => { if (!ownerIds.has(o.id)) extras.push(o); });
+      }
+
+      return [...byOwner, ...extras].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    },
     enabled: !!user?.email,
   });
 
