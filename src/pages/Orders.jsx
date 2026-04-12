@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, UtensilsCrossed, CreditCard, Printer, Globe, RefreshCw } from 'lucide-react';
+import { Loader2, Package, UtensilsCrossed, CreditCard, Printer, Globe } from 'lucide-react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import PaymentDialog from '@/components/pos/PaymentDialog';
@@ -31,7 +31,6 @@ export default function Orders() {
   const [filter, setFilter] = useState('open');
   const [payingOrder, setPayingOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
-  const [syncing, setSyncing] = useState(false);
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const [secretDeleteOrder, setSecretDeleteOrder] = useState(null);
@@ -76,31 +75,6 @@ export default function Orders() {
     mutationFn: ({ id, data }) => base44.entities.RestaurantTable.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] }),
   });
-
-  const handleSyncWixOrders = async () => {
-    setSyncing(true);
-    try {
-      const res = await base44.functions.invoke('syncWixOrders', {});
-      if (res.data?.notConnected) {
-        // Connect Wix account
-        const url = await base44.connectors.connectAppUser('69d28be020e6bfced7c26a54');
-        const popup = window.open(url, '_blank');
-        const timer = setInterval(() => {
-          if (!popup || popup.closed) {
-            clearInterval(timer);
-            setSyncing(false);
-          }
-        }, 500);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
-        toast.success(`${res.data?.created || 0} yeni sipariş senkronize edildi`);
-        setSyncing(false);
-      }
-    } catch (e) {
-      toast.error('Senkronizasyon başarısız');
-      setSyncing(false);
-    }
-  };
 
   const hasWixIntegration = !!(user?.wix_site_id);
   const hasTakeawayIntegration = !!(user?.takeaway_store_id);
@@ -262,12 +236,7 @@ export default function Orders() {
                       {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length}
                     </span>
                   )}
-                  {hasWixIntegration && (
-                    <Button size="sm" variant="outline" className="ml-auto text-xs gap-1 rounded-xl h-7 px-2" onClick={handleSyncWixOrders} disabled={syncing}>
-                      {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                      Senkronize Et
-                    </Button>
-                  )}
+
               </div>
             </div>
             <ScrollArea className="flex-1">
