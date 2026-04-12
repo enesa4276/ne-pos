@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   try {
     accessToken = await base44.asServiceRole.connectors.getCurrentAppUserAccessToken(CONNECTOR_ID);
   } catch (e) {
-    return Response.json({ error: "Wix not connected. Please connect your Wix account first.", notConnected: true }, { status: 400 });
+    return Response.json({ notConnected: true }, { status: 200 });
   }
 
   // Search Wix ecom orders — exclude FULFILLED and CANCELED
