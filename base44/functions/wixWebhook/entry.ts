@@ -1,17 +1,24 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
 
 Deno.serve(async (req) => {
+  // CORS / preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "*" } });
+  }
   if (req.method !== "POST") {
-    return Response.json({ error: "Method not allowed" }, { status: 405 });
+    return new Response("OK", { status: 200 });
   }
 
   const base44 = createClientFromRequest(req);
 
   let payload;
   try {
-    payload = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    const text = await req.text();
+    console.log("Raw body length:", text.length, "| First 200:", text.substring(0, 200));
+    payload = JSON.parse(text);
+  } catch (e) {
+    console.log("JSON parse error:", e.message);
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 
   console.log("Wix webhook received. Keys:", Object.keys(payload || {}).join(", "));
@@ -26,15 +33,15 @@ Deno.serve(async (req) => {
   const siteId     = payload?.metaSiteId || "";
 
   if (!wixOrderId) {
-    console.log("No orderId found, skipping.");
-    return Response.json({ success: true, skipped: true });
+    console.log("No orderId found, skipping. Keys:", Object.keys(payload || {}).join(", "));
+    return new Response(JSON.stringify({ success: true, skipped: true }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 
   // Duplicate kontrolü
   const existing = await base44.asServiceRole.entities.Order.filter({ wix_order_id: wixOrderId });
   if (existing?.length > 0) {
     console.log("Duplicate, skipping:", wixOrderId);
-    return Response.json({ success: true, duplicate: true });
+    return new Response(JSON.stringify({ success: true, duplicate: true }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 
   // ── Ürünler (lineItems) ──
@@ -119,7 +126,7 @@ Deno.serve(async (req) => {
 
   const created = await base44.asServiceRole.entities.Order.create(newOrder);
   console.log("Created order:", created?.id, "| customer:", customerName, "| items:", parsedItems.length, "| total:", grandTotal);
-  return Response.json({ success: true, id: created?.id });
+  return new Response(JSON.stringify({ success: true, id: created?.id }), { status: 200, headers: { "Content-Type": "application/json" } });
 });
 
 async function findOwnerEmail(base44, siteId) {
