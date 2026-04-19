@@ -15,178 +15,102 @@ Deno.serve(async (req) => {
   }
 
   console.log("Wix webhook received. Keys:", Object.keys(payload || {}).join(", "));
-  console.log("Payload preview:", JSON.stringify(payload).substring(0, 1000));
+  console.log("Payload preview:", JSON.stringify(payload).substring(0, 1500));
 
-  // ── Strateji 1: Wix otomasyonu flat alanlar (yeni format) ──
-  // order_id veya site_id varsa flat format
-  const hasFlat = payload?.order_id || payload?.site_id || payload?.["sipariş kimliği"] || payload?.["metaSiteId"];
-  if (hasFlat) {
-    console.log("Mode: flat fields");
-    return await handleFlatOrder(base44, payload);
+  // ── Wix Otomasyonu: "Sipariş kabul edildiğinde" ──
+  // Payload doğrudan sipariş objesi:
+  //   orderId, metaSiteId, lineItems[], customerDetails{}, paymentStatus,
+  //   deliveryAddress{}, fulfillmentMethod, buyerNote, priceSummary{}, email, contact{}
+
+  const wixOrderId = String(payload?.orderId || "").trim();
+  const siteId     = payload?.metaSiteId || "";
+
+  if (!wixOrderId) {
+    console.log("No orderId found, skipping.");
+    return Response.json({ success: true, skipped: true });
   }
-
-  // ── Strateji 2: Eski format — tüm sipariş nesnesi payload["1"] altında ──
-  const rawOrder = payload?.["1"] || payload?.data || payload?.order;
-  if (rawOrder && typeof rawOrder === "object") {
-    console.log("Mode: full-order object");
-    return await handleFullOrder(base44, rawOrder, payload);
-  }
-
-  // ── Bilinmeyen format ──
-  console.log("Unknown payload format");
-  return Response.json({ success: true, skipped: true, keys: Object.keys(payload || {}) });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Wix otomasyonu flat alanlar
-// Wix'ten bu anahtarlarla gönderin:
-//   order_id          → {{var("sipariş kimliği")}}
-//   site_id           → {{var("metaSiteId")}}
-//   payment_status    → {{var("ödemeDurumu")}}
-//   customer_email    → {{var("e-posta")}}
-//   fulfillment_method→ {{var("yerine getirme yöntemi")}}
-//   delivery_addr     → {{var("teslimat talimatları")}}
-//   buyer_note        → {{var("alıcıNotu")}}
-//   item_names        → {{arrayMap(var("satır öğeleri");"name")}}
-//   item_prices       → {{arrayMap(var("satır öğeleri");"price")}}
-//   item_quantities   → {{arrayMap(var("satır öğeleri");"quantity")}}
-//   item_variants     → {{arrayMap(var("satır öğeleri");"variant")}}
-// ─────────────────────────────────────────────────────────────────────────────
-async function handleFlatOrder(base44, payload) {
-  // Hem Türkçe anahtar hem de İngilizce anahtar desteği
-  const siteId = payload?.site_id || payload?.metaSiteId;
-  const wixOrderId = String(
-    payload?.order_id || payload?.["sipariş kimliği"] || ""
-  ).trim();
-
-  console.log("Flat siteId:", siteId, "orderId:", wixOrderId);
-
-  const ownerEmail = await findOwnerEmail(base44, siteId);
 
   // Duplicate kontrolü
-  if (wixOrderId) {
-    const existing = await base44.asServiceRole.entities.Order.filter({ wix_order_id: wixOrderId });
-    if (existing?.length > 0) {
-      console.log("Duplicate, skipping:", wixOrderId);
-      return Response.json({ success: true, duplicate: true });
-    }
+  const existing = await base44.asServiceRole.entities.Order.filter({ wix_order_id: wixOrderId });
+  if (existing?.length > 0) {
+    console.log("Duplicate, skipping:", wixOrderId);
+    return Response.json({ success: true, duplicate: true });
   }
 
-  // Ürün listelerini parse et (arrayMap virgülle ayrılmış string veya JSON dizi döndürür)
-  const parseList = (val) => {
-    if (!val) return [];
-    if (Array.isArray(val)) return val;
-    try { return JSON.parse(val); } catch {}
-    return String(val).split(",").map(s => s.trim()).filter(Boolean);
-  };
-
-  const names      = parseList(payload?.item_names);
-  const prices     = parseList(payload?.item_prices);
-  const quantities = parseList(payload?.item_quantities);
-  const variants   = parseList(payload?.item_variants);
-
-  const parsedItems = names.map((name, i) => {
-    const variant   = variants[i] || "";
-    const priceRaw  = String(prices[i] || "0").replace(/[^0-9.,]/g, "").replace(",", ".");
-    const basePrice = parseFloat(priceRaw) || 0;
-    const qty       = parseInt(quantities[i] || 1);
-    return {
-      product_id:   "",
-      product_name: variant ? `${name} (${variant})` : name,
-      base_price:   basePrice,
-      extras:       [],
-      quantity:     qty,
-      subtotal:     basePrice * qty,
-    };
-  });
-
-  const grandTotal = parsedItems.reduce((s, i) => s + i.subtotal, 0);
-
-  const customerEmail  = payload?.customer_email  || "";
-  const customerPhone  = payload?.customer_phone  || "";
-  const customerFname  = payload?.customer_fname  || "";
-  const customerLname  = payload?.customer_lname  || "";
-  const customerName   = payload?.customer_name   || `${customerFname} ${customerLname}`.trim();
-  const deliveryAddr   = payload?.delivery_addr   || "";
-  const buyerNote      = payload?.buyer_note      || "";
-  const paymentStatus  = payload?.payment_status  || "";
-  const fulfillMethod  = payload?.fulfillment_method || "";
-
-  // Adres: teslimat adresi + not + yöntem
-  const addrParts = [deliveryAddr, buyerNote, fulfillMethod ? `(${fulfillMethod})` : ""].filter(Boolean);
-  const fullAddr = addrParts.join(" | ");
-
-  const newOrder = {
-    order_type:          "takeaway",
-    order_source:        "wix",
-    status:              "pending",
-    wix_order_id:        wixOrderId || null,
-    wix_site_id:         siteId || null,
-    items:               parsedItems,
-    total:               grandTotal,
-    delivery_address:    fullAddr,
-    customer_name:       customerName,
-    customer_phone:      String(customerPhone),
-    customer_email:      String(customerEmail),
-    payment_status_wix:  paymentStatus,
-    payment_method_wix:  "",
-    amount_due_wix:      grandTotal,
-    sent_to_kitchen:     false,
-  };
-  if (ownerEmail) newOrder.created_by = ownerEmail;
-
-  const created = await base44.asServiceRole.entities.Order.create(newOrder);
-  console.log("Created order:", created?.id, "items:", parsedItems.length, "total:", grandTotal);
-  return Response.json({ success: true, id: created?.id });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Eski format — tüm sipariş nesnesi (fallback)
-// ─────────────────────────────────────────────────────────────────────────────
-async function handleFullOrder(base44, order, rootPayload) {
-  const siteId = order?.context?.metaSiteId || rootPayload?.siteId || order?.siteId;
-  const ownerEmail = await findOwnerEmail(base44, siteId);
-
-  const lineItems = order?.lineItems || order?.items || [];
+  // ── Ürünler (lineItems) ──
+  const lineItems = Array.isArray(payload?.lineItems) ? payload.lineItems : [];
   const parsedItems = lineItems.map((item) => {
-    const priceRaw  = item?.price || item?.priceData?.price || "0";
+    // Fiyat: price veya priceData.price (string veya number)
+    const priceRaw  = item?.price ?? item?.priceData?.price ?? item?.totalPrice ?? 0;
     const basePrice = parseFloat(String(priceRaw).replace(/[^0-9.,]/g, "").replace(",", ".")) || 0;
     const qty       = parseInt(item?.quantity || 1);
+
+    // Seçenekler/varyantlar extras olarak
+    const options = item?.options || item?.variantData?.selectedOptions || [];
+    const extras = Array.isArray(options)
+      ? options.map(o => ({ name: `${o.option || o.optionKey || ""}: ${o.selection || o.value || ""}`, price: 0 })).filter(e => e.name !== ": ")
+      : [];
+
     return {
       product_id:   item?.catalogReference?.catalogItemId || item?.id || "",
-      product_name: item?.name || item?.productName?.original || "?",
+      product_name: item?.productName?.original || item?.name || "?",
       base_price:   basePrice,
-      extras:       [],
+      extras,
       quantity:     qty,
-      subtotal:     basePrice * qty,
+      subtotal:     parseFloat((basePrice * qty).toFixed(2)),
     };
   });
 
-  const grandTotal = parseFloat(order?.priceSummary?.total?.amount || 0) ||
+  // ── Toplam ──
+  const totalRaw   = payload?.priceSummary?.total?.amount ?? payload?.priceSummary?.total ?? 0;
+  const grandTotal = parseFloat(String(totalRaw).replace(/[^0-9.,]/g, "").replace(",", ".")) || 
     parsedItems.reduce((s, i) => s + i.subtotal, 0);
 
-  const wixOrderId = order?.orderId || order?.id;
-  if (wixOrderId) {
-    const existing = await base44.asServiceRole.entities.Order.filter({ wix_order_id: String(wixOrderId) });
-    if (existing?.length > 0) {
-      return Response.json({ success: true, duplicate: true });
-    }
-  }
+  // ── Müşteri bilgileri ──
+  const cd          = payload?.customerDetails || payload?.contact || {};
+  const firstName   = cd?.firstName || cd?.first_name || "";
+  const lastName    = cd?.lastName  || cd?.last_name  || "";
+  const customerName = `${firstName} ${lastName}`.trim() || payload?.email || "";
+  const customerPhone = String(cd?.phone || cd?.recipientInfoPhoneNumber || cd?.phoneNumber || "");
+  const customerEmail = String(cd?.email || payload?.email || "");
 
-  const contact    = order?.contact || order?.buyerInfo || {};
-  const firstName  = contact?.firstName || "";
-  const lastName   = contact?.lastName || "";
+  // ── Teslimat adresi ──
+  const da = payload?.deliveryAddress || {};
+  const addrParts = [
+    da?.addressLine || da?.street || da?.streetAddress?.name || "",
+    da?.addressLine2 || "",
+    da?.city || "",
+    da?.postalCode || da?.zipCode || "",
+    da?.country || "",
+  ].filter(Boolean);
+  const deliveryAddr = addrParts.join(", ");
+
+  // ── Ek bilgiler ──
+  const buyerNote       = payload?.buyerNote || "";
+  const fulfillMethod   = payload?.fulfillmentMethod || "";
+  const paymentStatus   = payload?.paymentStatus || "";
+  const deliveryInstr   = payload?.deliveryInstructions || "";
+
+  // Adres + notlar birleştir
+  const fullAddrParts = [deliveryAddr, deliveryInstr, buyerNote, fulfillMethod ? `(${fulfillMethod})` : ""].filter(Boolean);
+  const fullAddr = fullAddrParts.join(" | ");
+
+  // ── Owner bul ──
+  const ownerEmail = await findOwnerEmail(base44, siteId);
+
   const newOrder = {
-    order_type:         "takeaway", order_source: "wix", status: "pending",
+    order_type:         "takeaway",
+    order_source:       "wix",
+    status:             "pending",
     wix_order_id:       wixOrderId,
     wix_site_id:        siteId || null,
     items:              parsedItems,
     total:              grandTotal,
-    delivery_address:   "",
-    customer_name:      `${firstName} ${lastName}`.trim(),
-    customer_phone:     String(contact?.phone || ""),
-    customer_email:     String(contact?.email || order?.email || ""),
-    payment_status_wix: order?.paymentStatus || "",
+    delivery_address:   fullAddr,
+    customer_name:      customerName,
+    customer_phone:     customerPhone,
+    customer_email:     customerEmail,
+    payment_status_wix: paymentStatus,
     payment_method_wix: "",
     amount_due_wix:     grandTotal,
     sent_to_kitchen:    false,
@@ -194,13 +118,10 @@ async function handleFullOrder(base44, order, rootPayload) {
   if (ownerEmail) newOrder.created_by = ownerEmail;
 
   const created = await base44.asServiceRole.entities.Order.create(newOrder);
-  console.log("Full-order created:", created?.id);
-  return Response.json({ success: true });
-}
+  console.log("Created order:", created?.id, "| customer:", customerName, "| items:", parsedItems.length, "| total:", grandTotal);
+  return Response.json({ success: true, id: created?.id });
+});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Yardımcı: site_id ile kullanıcı bul
-// ─────────────────────────────────────────────────────────────────────────────
 async function findOwnerEmail(base44, siteId) {
   const users = await base44.asServiceRole.entities.User.list();
   if (siteId) {
