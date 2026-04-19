@@ -102,11 +102,19 @@ async function handleFlatOrder(base44, payload) {
 
   const grandTotal = parsedItems.reduce((s, i) => s + i.subtotal, 0);
 
-  // Müşteri adı — müşteri detayları ayrı alanlardan veya birleşik
-  const customerEmail = payload?.customer_email || payload?.["e-posta"] || "";
-  const deliveryAddr  = payload?.delivery_addr || payload?.["teslimat talimatları"] || "";
-  const buyerNote     = payload?.buyer_note || payload?.["alıcıNotu"] || "";
-  const paymentStatus = payload?.payment_status || payload?.["ödemeDurumu"] || "";
+  const customerEmail  = payload?.customer_email  || "";
+  const customerPhone  = payload?.customer_phone  || "";
+  const customerFname  = payload?.customer_fname  || "";
+  const customerLname  = payload?.customer_lname  || "";
+  const customerName   = payload?.customer_name   || `${customerFname} ${customerLname}`.trim();
+  const deliveryAddr   = payload?.delivery_addr   || "";
+  const buyerNote      = payload?.buyer_note      || "";
+  const paymentStatus  = payload?.payment_status  || "";
+  const fulfillMethod  = payload?.fulfillment_method || "";
+
+  // Adres: teslimat adresi + not + yöntem
+  const addrParts = [deliveryAddr, buyerNote, fulfillMethod ? `(${fulfillMethod})` : ""].filter(Boolean);
+  const fullAddr = addrParts.join(" | ");
 
   const newOrder = {
     order_type:          "takeaway",
@@ -116,16 +124,15 @@ async function handleFlatOrder(base44, payload) {
     wix_site_id:         siteId || null,
     items:               parsedItems,
     total:               grandTotal,
-    delivery_address:    deliveryAddr,
-    customer_name:       "",
-    customer_phone:      "",
+    delivery_address:    fullAddr,
+    customer_name:       customerName,
+    customer_phone:      String(customerPhone),
     customer_email:      String(customerEmail),
     payment_status_wix:  paymentStatus,
     payment_method_wix:  "",
     amount_due_wix:      grandTotal,
     sent_to_kitchen:     false,
   };
-  if (buyerNote) newOrder.delivery_address = [deliveryAddr, buyerNote].filter(Boolean).join(" | ");
   if (ownerEmail) newOrder.created_by = ownerEmail;
 
   const created = await base44.asServiceRole.entities.Order.create(newOrder);

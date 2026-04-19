@@ -29,6 +29,7 @@ export default function Orders() {
   const { data: user } = useCurrentUser();
   const { t } = useLang();
   const [filter, setFilter] = useState('open');
+  const [onlineFilter, setOnlineFilter] = useState('active'); // active | fulfilled | cancelled | all
   const [payingOrder, setPayingOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
   const clickCountRef = useRef({});
@@ -128,14 +129,33 @@ export default function Orders() {
     };
   }, [pendingWixCount]);
 
-  // Split: Online orders vs POS orders
-  const onlineOrders = orders.filter(o => ['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source));
+  // Bugünün başlangıcı (local midnight)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  // Split: Online orders vs POS orders — sadece bugün
+  const onlineOrders = orders.filter(o =>
+    ['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source) &&
+    new Date(o.created_date) >= todayStart
+  );
   const wixOrders = hasWixIntegration ? onlineOrders.filter(o => o.order_source === 'wix') : [];
   const takeawayOrders = hasTakeawayIntegration ? onlineOrders.filter(o => o.order_source === 'takeaway_com') : [];
   const uberEatsOrders = hasUberEatsIntegration ? onlineOrders.filter(o => o.order_source === 'uber_eats') : [];
   const allOnlineOrders = [...wixOrders, ...takeawayOrders, ...uberEatsOrders]
     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-  const posOrders = orders.filter(o => !['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source));
+
+  const filteredOnlineOrders = allOnlineOrders.filter(o => {
+    if (onlineFilter === 'active') return !['fulfilled', 'cancelled'].includes(o.status);
+    if (onlineFilter === 'fulfilled') return o.status === 'fulfilled';
+    if (onlineFilter === 'cancelled') return o.status === 'cancelled';
+    return true;
+  });
+
+  // POS — sadece bugün
+  const posOrders = orders.filter(o =>
+    !['wix', 'takeaway_com', 'uber_eats'].includes(o.order_source) &&
+    new Date(o.created_date) >= todayStart
+  );
 
   const filteredPosOrders = filter === 'all'
     ? posOrders
@@ -228,43 +248,38 @@ export default function Orders() {
         {hasAnyOnlineIntegration && (
           <div className="flex flex-col w-1/2 min-w-0 overflow-hidden">
             <div className="p-3 border-b border-border bg-blue-50/50 dark:bg-blue-950/20 shrink-0">
-              <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-blue-500" />
-                  <h2 className="font-bold text-sm">{t('onlineOrders')}</h2>
-                  {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length > 0 && (
-                    <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
-                      {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length}
-                    </span>
-                  )}
-
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-4 w-4 text-blue-500" />
+                <h2 className="font-bold text-sm">{t('onlineOrders')}</h2>
+                {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length > 0 && (
+                  <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 font-bold">
+                    {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).length}
+                  </span>
+                )}
               </div>
+              <Tabs value={onlineFilter} onValueChange={setOnlineFilter}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="active" className="text-xs px-3">Aktif</TabsTrigger>
+                  <TabsTrigger value="fulfilled" className="text-xs px-3">Tamamlandı</TabsTrigger>
+                  <TabsTrigger value="cancelled" className="text-xs px-3">İptal</TabsTrigger>
+                  <TabsTrigger value="all" className="text-xs px-3">Tümü</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
             <ScrollArea className="flex-1">
               <div className="p-3 space-y-3">
-                {allOnlineOrders.length === 0 && (
+                {filteredOnlineOrders.length === 0 && (
                   <p className="text-center text-muted-foreground py-12 text-sm">{t('noOnlineOrders')}</p>
                 )}
-                {allOnlineOrders.filter(o => !['fulfilled','cancelled'].includes(o.status)).map(order => (
+                {filteredOnlineOrders.map(order => (
                   <WixOrderCard
                     key={order.id}
                     order={order}
                     onStatusChange={handleWixStatusChange}
+                    onPrint={handlePrint}
                     loading={updateOrder.isPending}
                   />
                 ))}
-                {allOnlineOrders.filter(o => ['fulfilled','cancelled'].includes(o.status)).length > 0 && (
-                  <>
-                    <p className="text-xs text-muted-foreground font-medium pt-2">{t('onlineOrdersDone')}</p>
-                    {allOnlineOrders.filter(o => ['fulfilled','cancelled'].includes(o.status)).slice(0, 20).map(order => (
-                      <WixOrderCard
-                        key={order.id}
-                        order={order}
-                        onStatusChange={handleWixStatusChange}
-                        loading={updateOrder.isPending}
-                      />
-                    ))}
-                  </>
-                )}
               </div>
             </ScrollArea>
           </div>
