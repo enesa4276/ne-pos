@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
 
   console.log("Wix webhook received:", JSON.stringify(payload).substring(0, 500));
 
-  // Wix Restaurants actual order data is under payload.data
-  const order = payload?.data || payload?.order || payload;
+  // Wix Restaurants actual order data is under payload.data or payload["1"] (HTTP automation key)
+  const order = payload?.data || payload?.order || payload?.["1"] || payload;
 
   // Site ID lives in context.metaSiteId
   const siteId =
