@@ -14,7 +14,16 @@ Deno.serve(async (req) => {
   let payload;
   try {
     const text = await req.text();
-    console.log("Raw body length:", text.length, "| First 200:", text.substring(0, 200));
+    console.log("=== WIX WEBHOOK HIT ===");
+    console.log("Method:", req.method);
+    console.log("Content-Type:", req.headers.get("content-type"));
+    console.log("Body length:", text.length);
+    console.log("Full body:", text.substring(0, 3000));
+    
+    if (!text || text.trim() === "") {
+      console.log("EMPTY BODY — Wix sent no payload!");
+      return new Response(JSON.stringify({ success: true, note: "empty body" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
     payload = JSON.parse(text);
   } catch (e) {
     console.log("JSON parse error:", e.message);
