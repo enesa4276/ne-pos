@@ -2,13 +2,19 @@
   "name": "Order",
   "type": "object",
   "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Bu kayd\u0131n ait oldu\u011fu restoran"
+    },
     "order_type": {
       "type": "string",
       "enum": [
         "dine_in",
-        "takeaway"
+        "takeaway",
+        "delivery",
+        "phone"
       ],
-      "description": "Masada or Gel-Al"
+      "description": "Masada or Gel-Al or Delivery or Phone"
     },
     "table_id": {
       "type": "string",
@@ -67,22 +73,20 @@
         "preparing",
         "ready_for_delivery_pickup",
         "out_for_delivery",
-        "fulfilled"
+        "fulfilled",
+        "completed"
       ],
-      "default": "open",
-      "description": "Current status of the order"
+      "default": "open"
     },
     "payment_method": {
       "type": "string",
       "enum": [
         "cash",
         "card"
-      ],
-      "description": "Payment method used for POS orders"
+      ]
     },
     "total": {
-      "type": "number",
-      "description": "Grand total"
+      "type": "number"
     },
     "sent_to_kitchen": {
       "type": "boolean",
@@ -95,14 +99,14 @@
         "pos_takeaway",
         "wix",
         "takeaway_com",
-        "uber_eats"
+        "uber_eats",
+        "menupro",
+        "ai_phone"
       ],
-      "default": "pos_dine_in",
-      "description": "Source of the order"
+      "default": "pos_dine_in"
     },
     "wix_order_id": {
-      "type": "string",
-      "description": "Wix unique order ID"
+      "type": "string"
     },
     "payment_status_wix": {
       "type": "string",
@@ -111,49 +115,45 @@
         "UNPAID",
         "PARTIALLY_PAID",
         "FULLY_REFUNDED",
-        "PARTIALLY_REFUNDED"
-      ],
-      "description": "Payment status from Wix"
+        "PARTIALLY_REFUNDED",
+        ""
+      ]
     },
     "payment_method_wix": {
-      "type": "string",
-      "description": "Payment method from Wix (e.g. CreditCard, PayPal)"
+      "type": "string"
     },
     "amount_due_wix": {
-      "type": "number",
-      "description": "Amount due from Wix order"
+      "type": "number"
+    },
+    "fulfillment_status": {
+      "type": "string"
     },
     "delivery_address": {
-      "type": "string",
-      "description": "Full delivery address for online orders"
+      "type": "string"
     },
     "customer_name": {
-      "type": "string",
-      "description": "Customer name from online order"
+      "type": "string"
     },
     "customer_phone": {
-      "type": "string",
-      "description": "Customer phone from online order"
+      "type": "string"
     },
     "customer_email": {
-      "type": "string",
-      "description": "Customer email from online order"
+      "type": "string"
     },
     "wix_site_id": {
-      "type": "string",
-      "description": "Wix site ID this order belongs to"
+      "type": "string"
     },
     "external_order_id": {
-      "type": "string",
-      "description": "Unique order ID from external platform (Takeaway, Uber Eats)"
+      "type": "string"
     },
     "external_payment_status": {
-      "type": "string",
-      "description": "Payment status from external platform"
+      "type": "string"
     },
     "external_payment_method": {
-      "type": "string",
-      "description": "Payment method from external platform"
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
     }
   },
   "required": [

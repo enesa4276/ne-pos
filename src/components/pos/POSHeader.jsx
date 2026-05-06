@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2, UserCircle } from 'lucide-react';
+import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2, UserCircle, Phone } from 'lucide-react';
 import { useLang } from '@/lib/LanguageContext';
 import { LANGUAGES } from '@/lib/i18n';
 
@@ -40,6 +40,12 @@ export default function POSHeader({ darkMode, onToggleDark }) {
           <Button variant="ghost" size="sm" className={navBtn('/analytics')}>
             <BarChart2 className="h-4 w-4" />
             <span className="hidden sm:inline">{t('analytics')}</span>
+          </Button>
+        </Link>
+        <Link to="/ai-phone">
+          <Button variant="ghost" size="sm" className={navBtn('/ai-phone')}>
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Phone</span>
           </Button>
         </Link>
         <Link to="/admin">

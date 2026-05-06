@@ -1,0 +1,93 @@
+{
+  "name": "PhoneCall",
+  "type": "object",
+  "description": "AI telefon g\u00f6r\u00fc\u015fme kay\u0131tlar\u0131",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "call_sid": {
+      "type": "string",
+      "description": "Twilio Call SID"
+    },
+    "from_number": {
+      "type": "string"
+    },
+    "to_number": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ringing",
+        "in_progress",
+        "completed",
+        "transferred_to_human",
+        "failed",
+        "cancelled"
+      ],
+      "default": "ringing"
+    },
+    "transcript": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "speaker": {
+            "type": "string",
+            "enum": [
+              "customer",
+              "ai"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "order_data": {
+      "type": "object"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "ai_retry_count": {
+      "type": "number",
+      "default": 0
+    },
+    "transferred_to_human": {
+      "type": "boolean",
+      "default": false
+    },
+    "transfer_reason": {
+      "type": "string"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "cost_twilio": {
+      "type": "number"
+    },
+    "cost_ai": {
+      "type": "number"
+    },
+    "cost_total": {
+      "type": "number"
+    },
+    "ended_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "call_sid",
+    "from_number",
+    "to_number"
+  ]
+}

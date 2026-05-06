@@ -2,9 +2,12 @@
   "name": "ExtraGroup",
   "type": "object",
   "properties": {
-    "name": {
+    "tenant_id": {
       "type": "string",
-      "description": "Group name (e.g. Porsiyon, Soslar)"
+      "description": "Bu kayd\u0131n ait oldu\u011fu restoran"
+    },
+    "name": {
+      "type": "string"
     },
     "selection_type": {
       "type": "string",
@@ -12,8 +15,7 @@
         "single_required",
         "multiple"
       ],
-      "default": "multiple",
-      "description": "single_required = must pick one, multiple = pick any"
+      "default": "multiple"
     }
   },
   "required": [

@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { LanguageProvider } from '@/lib/LanguageContext';
+import { TenantProvider } from '@/lib/TenantContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from '@/components/Layout';
 import Tables from '@/pages/Tables';
@@ -13,6 +14,8 @@ import Orders from '@/pages/Orders';
 import Admin from '@/pages/Admin';
 import Analytics from '@/pages/Analytics';
 import Account from '@/pages/Account';
+import AIPhoneDashboard from '@/pages/AIPhoneDashboard';
+import TenantManagement from '@/pages/admin/TenantManagement';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -45,6 +48,8 @@ const AuthenticatedApp = () => {
         <Route path="/pos" element={<POS />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/tenants" element={<TenantManagement />} />
+        <Route path="/ai-phone" element={<AIPhoneDashboard />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/account" element={<Account />} />
       </Route>
@@ -59,12 +64,14 @@ function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
+        <TenantProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </TenantProvider>
       </LanguageProvider>
     </AuthProvider>
   )

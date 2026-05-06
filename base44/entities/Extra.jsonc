@@ -2,18 +2,19 @@
   "name": "Extra",
   "type": "object",
   "properties": {
-    "name": {
+    "tenant_id": {
       "type": "string",
-      "description": "Extra name"
+      "description": "Bu kayd\u0131n ait oldu\u011fu restoran"
+    },
+    "name": {
+      "type": "string"
     },
     "group_id": {
-      "type": "string",
-      "description": "ExtraGroup ID"
+      "type": "string"
     },
     "price": {
       "type": "number",
-      "default": 0,
-      "description": "Additional price in EUR"
+      "default": 0
     }
   },
   "required": [

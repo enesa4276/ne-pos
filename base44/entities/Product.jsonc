@@ -2,6 +2,10 @@
   "name": "Product",
   "type": "object",
   "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Bu kayd\u0131n ait oldu\u011fu restoran"
+    },
     "name": {
       "type": "string",
       "description": "Product name"

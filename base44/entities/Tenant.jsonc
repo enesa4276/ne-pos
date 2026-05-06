@@ -1,0 +1,164 @@
+{
+  "name": "Tenant",
+  "type": "object",
+  "description": "Restoran/\u0130\u015fletme hesaplar\u0131 - Multi-tenant SaaS",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Unique tenant identifier (UUID)"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Restoran ad\u0131"
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "restaurant-name.nepos.app"
+    },
+    "custom_domain": {
+      "type": "string",
+      "description": "Premium: restaurant.com"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "active",
+        "suspended",
+        "cancelled"
+      ],
+      "default": "trial"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "professional",
+        "enterprise"
+      ],
+      "default": "basic"
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "twilio_phone_number": {
+      "type": "string",
+      "description": "AI telefon i\u00e7in Bel\u00e7ika numaras\u0131 (+32)"
+    },
+    "features_enabled": {
+      "type": "object",
+      "description": "Admin kontroll\u00fc \u00f6zellikler",
+      "properties": {
+        "ai_phone": {
+          "type": "boolean",
+          "default": false
+        },
+        "advanced_crm": {
+          "type": "boolean",
+          "default": false
+        },
+        "inventory_management": {
+          "type": "boolean",
+          "default": false
+        },
+        "advanced_analytics": {
+          "type": "boolean",
+          "default": false
+        },
+        "qr_menu": {
+          "type": "boolean",
+          "default": false
+        },
+        "whatsapp_integration": {
+          "type": "boolean",
+          "default": false
+        },
+        "multi_branch": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {
+        "ai_phone": false,
+        "advanced_crm": false,
+        "inventory_management": false,
+        "advanced_analytics": false,
+        "qr_menu": false,
+        "whatsapp_integration": false,
+        "multi_branch": false
+      }
+    },
+    "feature_limits": {
+      "type": "object",
+      "properties": {
+        "max_orders_per_month": {
+          "type": "number",
+          "default": 500
+        },
+        "max_users": {
+          "type": "number",
+          "default": 5
+        },
+        "max_ai_calls_per_month": {
+          "type": "number",
+          "default": 100
+        }
+      },
+      "default": {
+        "max_orders_per_month": 500,
+        "max_users": 5,
+        "max_ai_calls_per_month": 100
+      }
+    },
+    "total_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "total_revenue": {
+      "type": "number",
+      "default": 0
+    },
+    "total_ai_calls": {
+      "type": "number",
+      "default": 0
+    },
+    "monthly_ai_cost": {
+      "type": "number",
+      "default": 0
+    },
+    "trial_end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_activity_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "settings": {
+      "type": "object",
+      "description": "menupro_restaurant_id, default_language, fallback_phone, etc.",
+      "default": {}
+    },
+    "admin_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "company_name",
+    "owner_email"
+  ]
+}

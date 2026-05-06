@@ -1,0 +1,138 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "description": "M\u00fc\u015fteri profilleri ve CRM",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "last_order_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "total_spent": {
+      "type": "number",
+      "default": 0
+    },
+    "average_order_value": {
+      "type": "number",
+      "default": 0
+    },
+    "favorite_items": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "preferred_delivery_address": {
+      "type": "string"
+    },
+    "allergies": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "dietary_restrictions": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "new",
+        "regular",
+        "loyal",
+        "vip"
+      ],
+      "default": "new"
+    },
+    "loyalty_points": {
+      "type": "number",
+      "default": 0
+    },
+    "churn_risk_score": {
+      "type": "number",
+      "default": 0
+    },
+    "marketing_consent": {
+      "type": "boolean",
+      "default": false
+    },
+    "sms_notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "email_notifications": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "wix",
+        "takeaway",
+        "pos",
+        "ai_phone",
+        "menupro",
+        "uber_eats",
+        "instagram",
+        "other"
+      ]
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "nl",
+        "fr",
+        "en",
+        "tr",
+        "de"
+      ]
+    }
+  },
+  "required": [
+    "tenant_id",
+    "phone",
+    "name"
+  ]
+}
