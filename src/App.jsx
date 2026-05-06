@@ -64,14 +64,14 @@ function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <TenantProvider>
-          <QueryClientProvider client={queryClientInstance}>
+        <QueryClientProvider client={queryClientInstance}>
+          <TenantProvider>
             <Router>
               <AuthenticatedApp />
             </Router>
             <Toaster />
-          </QueryClientProvider>
-        </TenantProvider>
+          </TenantProvider>
+        </QueryClientProvider>
       </LanguageProvider>
     </AuthProvider>
   )
