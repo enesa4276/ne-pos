@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check, Upload, ImageIcon, Loader2 } from 'lucide-react';
+import MenuproIntegration from '@/components/account/MenuproIntegration';
+import AIPhoneSettings from '@/components/account/AIPhoneSettings';
 
 export default function Account() {
   const { data: user, isLoading } = useCurrentUser();
@@ -31,6 +33,7 @@ export default function Account() {
     takeaway_store_id: '',
     uber_eats_webhook_secret: '',
     uber_eats_store_id: '',
+    menupro_restaurant_id: '',
   });
   const [saving, setSaving] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
@@ -62,6 +65,7 @@ export default function Account() {
         takeaway_store_id: user.takeaway_store_id || '',
         uber_eats_webhook_secret: user.uber_eats_webhook_secret || '',
         uber_eats_store_id: user.uber_eats_store_id || '',
+        menupro_restaurant_id: user.menupro_restaurant_id || '',
       });
     }
   }, [user]);
@@ -218,6 +222,18 @@ export default function Account() {
           <SaveBtn />
         </CardContent>
       </Card>
+
+      {/* Menupro Integration */}
+      <MenuproIntegration
+        value={form.menupro_restaurant_id}
+        onChange={(v) => setForm(f => ({ ...f, menupro_restaurant_id: v }))}
+        onSave={handleSave}
+        saving={saving}
+        origin={origin}
+      />
+
+      {/* AI Phone Settings */}
+      <AIPhoneSettings origin={origin} />
 
       {/* Uber Eats Integration */}
       <Card>
