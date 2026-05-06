@@ -107,5 +107,23 @@
       "type": "string",
       "description": "Menupro restaurant/store ID"
     }
-  }
+  },
+  "required": [
+    "tenant_id",
+    "selected_tenant_id",
+    "company_name",
+    "vat_number",
+    "address",
+    "phone",
+    "email_receipt",
+    "receipt_footer",
+    "receipt_logo_url",
+    "wix_webhook_secret",
+    "wix_site_id",
+    "takeaway_webhook_secret",
+    "takeaway_store_id",
+    "uber_eats_webhook_secret",
+    "uber_eats_store_id",
+    "menupro_restaurant_id"
+  ]
 }

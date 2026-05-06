@@ -1,13 +1,19 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2, UserCircle, Phone } from 'lucide-react';
+import { LayoutGrid, Package, Settings, Sun, Moon, BarChart2, UserCircle, Phone, Building2 } from 'lucide-react';
 import { useLang } from '@/lib/LanguageContext';
 import { LANGUAGES } from '@/lib/i18n';
+import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useTenant } from '@/lib/TenantContext';
 
 export default function POSHeader({ darkMode, onToggleDark }) {
   const { lang, setLanguage, t } = useLang();
   const location = useLocation();
+  const { data: user } = useCurrentUser();
+  const { hasFeature } = useTenant();
+  const isSuperAdmin = user?.is_super_admin === true;
+  const aiPhoneEnabled = hasFeature('ai_phone');
 
   const navBtn = (path) =>
     location.pathname === path
@@ -42,12 +48,22 @@ export default function POSHeader({ darkMode, onToggleDark }) {
             <span className="hidden sm:inline">{t('analytics')}</span>
           </Button>
         </Link>
-        <Link to="/ai-phone">
-          <Button variant="ghost" size="sm" className={navBtn('/ai-phone')}>
-            <Phone className="h-4 w-4" />
-            <span className="hidden sm:inline">AI Phone</span>
-          </Button>
-        </Link>
+        {(aiPhoneEnabled || isSuperAdmin) && (
+          <Link to="/ai-phone">
+            <Button variant="ghost" size="sm" className={navBtn('/ai-phone')}>
+              <Phone className="h-4 w-4" />
+              <span className="hidden sm:inline">AI Phone</span>
+            </Button>
+          </Link>
+        )}
+        {isSuperAdmin && (
+          <Link to="/admin/tenants">
+            <Button variant="ghost" size="sm" className={navBtn('/admin/tenants')}>
+              <Building2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Tenants</span>
+            </Button>
+          </Link>
+        )}
         <Link to="/admin">
           <Button variant="ghost" size="sm" className={navBtn('/admin')}>
             <Settings className="h-4 w-4" />
