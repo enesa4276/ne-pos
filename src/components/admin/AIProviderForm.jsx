@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { PROVIDER_MODELS, PROVIDER_DEFAULT_SECRETS } from '@/lib/aiFeatures';
-import { Save, X } from 'lucide-react';
+import { Save, X, FlaskConical } from 'lucide-react';
+import AIProviderTestDialog from '@/components/admin/AIProviderTestDialog';
 
 // Yeni form: hangi AI özelliği için soruluyor DEĞİL.
 // Sadece sağlayıcı + model + secret eklenir. Daha sonra AI özelliklerine ayrı ekrandan atanır.
@@ -23,6 +24,7 @@ const DEFAULT_FORM = {
 
 export default function AIProviderForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState(initial || DEFAULT_FORM);
+  const [testOpen, setTestOpen] = useState(false);
 
   useEffect(() => { setForm(initial || DEFAULT_FORM); }, [initial]);
 
@@ -115,9 +117,19 @@ export default function AIProviderForm({ initial, onSave, onCancel, saving }) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="flex justify-end gap-2 pt-1 flex-wrap">
         <Button variant="outline" size="sm" onClick={onCancel} disabled={saving} className="rounded-xl">
           <X className="h-3.5 w-3.5 mr-1" /> İptal
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setTestOpen(true)}
+          disabled={!form.model_name || !form.secret_name}
+          className="rounded-xl"
+          title="Kaydetmeden önce test et"
+        >
+          <FlaskConical className="h-3.5 w-3.5 mr-1" /> Test Et
         </Button>
         <Button
           size="sm"
@@ -128,6 +140,12 @@ export default function AIProviderForm({ initial, onSave, onCancel, saving }) {
           <Save className="h-3.5 w-3.5 mr-1" /> {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </Button>
       </div>
+
+      <AIProviderTestDialog
+        open={testOpen}
+        onOpenChange={setTestOpen}
+        provider={form}
+      />
     </div>
   );
 }

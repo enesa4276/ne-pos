@@ -62,11 +62,12 @@ export default function AIFeatureMapping({ providers, onChanged }) {
       );
 
       let finalId = configId;
+      let cloned = null;
       if (alreadyMapped) {
         finalId = alreadyMapped.id;
       } else if (selected.ai_feature && selected.ai_feature !== featureKey) {
         // Seçilen kayıt başka bir feature'a atanmış → KLONLA, böylece her ikisi de çalışır.
-        const clone = await base44.entities.AIApiConfig.create({
+        cloned = await base44.entities.AIApiConfig.create({
           tenant_id: selected.tenant_id || 'global',
           ai_feature: featureKey,
           ai_provider: selected.ai_provider,
@@ -78,23 +79,16 @@ export default function AIFeatureMapping({ providers, onChanged }) {
           is_active: true,
           notes: selected.notes,
         });
-        finalId = clone.id;
+        finalId = cloned.id;
       } else {
         // Henüz hiçbir feature'a atanmamış → doğrudan ata
         await base44.entities.AIApiConfig.update(configId, { ai_feature: featureKey });
       }
 
-      // Bu featureKey'e atanmış DİĞER kayıtları geri al (birden fazla atama olmasın aynı feature'a)
-      const sameFeatureOthers = (providers || []).filter(
-        (p) => p.ai_feature === featureKey && p.id !== finalId
-      );
-      for (const p of sameFeatureOthers) {
-        await base44.entities.AIApiConfig.update(p.id, { ai_feature: 'transcription' });
-      }
-
       setMappings((m) => ({ ...m, [featureKey]: finalId }));
       toast.success('Eşleme güncellendi');
-      onChanged?.({ featureKey, configId: finalId, reload: !alreadyMapped && selected.ai_feature && selected.ai_feature !== featureKey });
+      // Parent state'i güncelle (sayfa yenilenmesin) — klonlandıysa yeni kaydı ekle
+      onChanged?.({ featureKey, configId: finalId, clonedRecord: cloned });
     } catch (e) {
       setMappings(prev);
       const msg = String(e?.message || '').toLowerCase().includes('rate limit')

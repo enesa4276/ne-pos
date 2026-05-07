@@ -1,0 +1,58 @@
+{
+  "name": "AIUsageEntry",
+  "type": "object",
+  "description": "AI API kullan\u0131m kay\u0131tlar\u0131 \u2014 g\u00fcnl\u00fck/ayl\u0131k token & istek b\u00fct\u00e7esi takibi i\u00e7in",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Bu kullan\u0131m\u0131n ait oldu\u011fu tenant ('global' olabilir)"
+    },
+    "config_id": {
+      "type": "string",
+      "description": "Kullan\u0131lan AIApiConfig kayd\u0131"
+    },
+    "ai_provider": {
+      "type": "string"
+    },
+    "model_name": {
+      "type": "string"
+    },
+    "ai_feature": {
+      "type": "string",
+      "description": "\u00c7a\u011fr\u0131n\u0131n ba\u011fland\u0131\u011f\u0131 AI \u00f6zelli\u011fi"
+    },
+    "prompt_tokens": {
+      "type": "number",
+      "default": 0
+    },
+    "completion_tokens": {
+      "type": "number",
+      "default": 0
+    },
+    "total_tokens": {
+      "type": "number",
+      "default": 0
+    },
+    "cost_eur": {
+      "type": "number",
+      "default": 0
+    },
+    "request_count": {
+      "type": "number",
+      "default": 1
+    },
+    "is_test": {
+      "type": "boolean",
+      "default": false
+    },
+    "day_key": {
+      "type": "string",
+      "description": "YYYY-MM-DD - g\u00fcnl\u00fck grupland\u0131rma i\u00e7in"
+    }
+  },
+  "required": [
+    "config_id",
+    "ai_provider",
+    "model_name"
+  ]
+}

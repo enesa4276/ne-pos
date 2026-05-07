@@ -20,7 +20,7 @@ async function callOpenAICompatible({ baseUrl, apiKey, model, messages, temperat
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`AI call failed: ${data?.error?.message || res.statusText}`);
-  return data?.choices?.[0]?.message?.content || "";
+  return { text: data?.choices?.[0]?.message?.content || "", usage: data?.usage || null };
 }
 
 async function callAnthropic({ apiKey, model, messages, max_tokens, temperature }) {
@@ -43,7 +43,11 @@ async function callAnthropic({ apiKey, model, messages, max_tokens, temperature 
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`Anthropic failed: ${data?.error?.message || res.statusText}`);
-  return data?.content?.[0]?.text || "";
+  const u = data?.usage;
+  return {
+    text: data?.content?.[0]?.text || "",
+    usage: u ? { prompt_tokens: u.input_tokens || 0, completion_tokens: u.output_tokens || 0, total_tokens: (u.input_tokens || 0) + (u.output_tokens || 0) } : null,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -89,48 +93,55 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Sır bulunamadı: ${config.secret_name}` }, { status: 500 });
     }
 
-    let text = "";
+    let result;
     if (config.ai_provider === "OpenAI") {
-      text = await callOpenAICompatible({
+      result = await callOpenAICompatible({
         baseUrl: "https://api.openai.com/v1",
-        apiKey,
-        model: config.model_name,
-        messages,
-        temperature: config.temperature,
-        max_tokens: config.max_tokens,
+        apiKey, model: config.model_name, messages,
+        temperature: config.temperature, max_tokens: config.max_tokens,
       });
     } else if (config.ai_provider === "OpenRouter") {
-      text = await callOpenAICompatible({
+      result = await callOpenAICompatible({
         baseUrl: "https://openrouter.ai/api/v1",
-        apiKey,
-        model: config.model_name,
-        messages,
-        temperature: config.temperature,
-        max_tokens: config.max_tokens,
+        apiKey, model: config.model_name, messages,
+        temperature: config.temperature, max_tokens: config.max_tokens,
         extraHeaders: { "HTTP-Referer": "https://nepos.app", "X-Title": "Ne-Pos" },
       });
     } else if (config.ai_provider === "Groq") {
-      text = await callOpenAICompatible({
+      result = await callOpenAICompatible({
         baseUrl: "https://api.groq.com/openai/v1",
-        apiKey,
-        model: config.model_name,
-        messages,
-        temperature: config.temperature,
-        max_tokens: config.max_tokens,
+        apiKey, model: config.model_name, messages,
+        temperature: config.temperature, max_tokens: config.max_tokens,
       });
     } else if (config.ai_provider === "Anthropic") {
-      text = await callAnthropic({
-        apiKey,
-        model: config.model_name,
-        messages,
-        max_tokens: config.max_tokens,
-        temperature: config.temperature,
+      result = await callAnthropic({
+        apiKey, model: config.model_name, messages,
+        max_tokens: config.max_tokens, temperature: config.temperature,
       });
     } else {
       return Response.json({ error: `Sağlayıcı desteklenmiyor: ${config.ai_provider}` }, { status: 400 });
     }
 
-    return Response.json({ text, provider: config.ai_provider, model: config.model_name });
+    // Kullanım logu — bütçe paneli için (best-effort, hata olursa response'u etkilemesin)
+    try {
+      const usage = result.usage || {};
+      const day = new Date().toISOString().slice(0, 10);
+      await base44.asServiceRole.entities.AIUsageEntry.create({
+        tenant_id: tenantId || "global",
+        config_id: config.id,
+        ai_provider: config.ai_provider,
+        model_name: config.model_name,
+        ai_feature: feature,
+        prompt_tokens: usage.prompt_tokens || 0,
+        completion_tokens: usage.completion_tokens || 0,
+        total_tokens: usage.total_tokens || ((usage.prompt_tokens || 0) + (usage.completion_tokens || 0)),
+        request_count: 1,
+        is_test: false,
+        day_key: day,
+      });
+    } catch (_) { /* ignore logging errors */ }
+
+    return Response.json({ text: result.text, provider: config.ai_provider, model: config.model_name });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

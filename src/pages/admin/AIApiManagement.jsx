@@ -7,10 +7,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Plus, Sparkles, ShieldCheck, Pencil, Trash2, Key, Phone } from 'lucide-react';
+import { Loader2, Plus, Sparkles, ShieldCheck, Pencil, Trash2, Key, Phone, Copy, FlaskConical } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import AIProviderForm from '@/components/admin/AIProviderForm';
 import AIFeatureMapping from '@/components/admin/AIFeatureMapping';
+import AIProviderTestDialog from '@/components/admin/AIProviderTestDialog';
+import AIUsageChart from '@/components/admin/AIUsageChart';
 
 export default function AIApiManagement() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -19,6 +21,7 @@ export default function AIApiManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [testProvider, setTestProvider] = useState(null); // Test diyaloğu için
 
   useEffect(() => {
     if (user?.role === 'admin' || user?.is_super_admin) loadAll();
@@ -74,6 +77,28 @@ export default function AIApiManagement() {
     }
   }
 
+  async function handleClone(p) {
+    try {
+      const payload = {
+        tenant_id: p.tenant_id || 'global',
+        ai_feature: 'transcription', // havuza ekle, eşleme tab'ından atanır
+        ai_provider: p.ai_provider,
+        model_name: p.model_name,
+        secret_name: p.secret_name,
+        temperature: p.temperature,
+        max_tokens: p.max_tokens,
+        monthly_budget_eur: p.monthly_budget_eur,
+        is_active: true,
+        notes: p.notes ? `${p.notes} (kopya)` : 'Kopya',
+      };
+      const created = await base44.entities.AIApiConfig.create(payload);
+      setProviders((prev) => [created, ...prev]);
+      toast.success('Sağlayıcı klonlandı');
+    } catch (e) {
+      toast.error('Klonlanamadı: ' + e.message);
+    }
+  }
+
   async function handleToggle(p, active) {
     const prev = providers;
     setProviders((list) => list.map((x) => (x.id === p.id ? { ...x, is_active: active } : x))); // optimistic
@@ -123,9 +148,10 @@ export default function AIApiManagement() {
         </Card>
 
         <Tabs defaultValue="providers">
-          <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsList className="grid grid-cols-3 w-full max-w-xl">
             <TabsTrigger value="providers">API Sağlayıcılar</TabsTrigger>
             <TabsTrigger value="mapping">Özellik Eşlemesi</TabsTrigger>
+            <TabsTrigger value="usage">Kullanım</TabsTrigger>
           </TabsList>
 
           {/* SAĞLAYICI HAVUZU */}
@@ -183,10 +209,16 @@ export default function AIApiManagement() {
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Switch checked={p.is_active} onCheckedChange={(c) => handleToggle(p, c)} />
                       <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(p); setShowForm(true); }}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => setTestProvider(p)} title="Test Et">
+                          <FlaskConical className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleClone(p)} title="Klonla">
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(p); setShowForm(true); }} title="Düzenle">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p)}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p)} title="Sil">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -197,31 +229,37 @@ export default function AIApiManagement() {
             </div>
           </TabsContent>
 
+          {/* KULLANIM GRAFİĞİ */}
+          <TabsContent value="usage" className="mt-3">
+            <AIUsageChart providers={providers} />
+          </TabsContent>
+
           {/* ÖZELLİK EŞLEMESİ */}
           <TabsContent value="mapping" className="mt-3">
             <AIFeatureMapping
               providers={providers}
-              onChanged={({ featureKey, configId, reload }) => {
-                // Klonlama olduysa sunucudan yeni kaydı çekmek için listeyi tazele
-                if (reload) {
-                  loadAll();
-                  return;
-                }
-                // Aksi halde lokal state'i güncelle (rate limit'i önle)
-                setProviders((list) =>
-                  list.map((p) => {
-                    if (p.id === configId) return { ...p, ai_feature: featureKey };
-                    if (p.ai_feature === featureKey && p.id !== configId) {
-                      return { ...p, ai_feature: 'transcription' };
-                    }
-                    return p;
-                  })
-                );
+              onChanged={({ featureKey, configId, clonedRecord }) => {
+                // Sayfa yenilenmesin — sadece local state'i güncelle
+                setProviders((list) => {
+                  let next = list;
+                  // Klonlandıysa yeni kaydı ekle
+                  if (clonedRecord && !list.find((x) => x.id === clonedRecord.id)) {
+                    next = [clonedRecord, ...next];
+                  }
+                  // Bu feature'a atanan kaydı işaretle, diğerlerini bozma (artık aynı API birden çok feature'a atanabilir)
+                  return next.map((p) => (p.id === configId ? { ...p, ai_feature: featureKey } : p));
+                });
               }}
             />
           </TabsContent>
         </Tabs>
       </div>
+
+      <AIProviderTestDialog
+        open={!!testProvider}
+        onOpenChange={(o) => { if (!o) setTestProvider(null); }}
+        provider={testProvider}
+      />
     </ScrollArea>
   );
 }
