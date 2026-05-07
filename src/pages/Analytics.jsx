@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { TrendingUp, ShoppingBag, UtensilsCrossed, Package, Star, Loader2 } from 'lucide-react';
 import moment from 'moment';
+import HeatmapChart from '@/components/analytics/HeatmapChart';
+import WaiterPerformance from '@/components/analytics/WaiterPerformance';
+import EODSummaryCard from '@/components/analytics/EODSummaryCard';
 
 const COLORS = ['#f97316', '#22c55e', '#3b82f6', '#a855f7', '#eab308', '#ef4444', '#14b8a6', '#f43f5e'];
 
@@ -203,6 +206,14 @@ export default function Analytics() {
             </CardContent>
           </Card>
         </div>
+
+        {/* AI EOD Summary + Heatmap */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <EODSummaryCard />
+          <WaiterPerformance orders={paidOrders} />
+        </div>
+
+        <HeatmapChart orders={paidOrders} />
 
         {/* Top Products */}
         <Card>

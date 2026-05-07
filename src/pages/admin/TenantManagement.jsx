@@ -7,13 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { FEATURES } from '@/lib/features';
-import { Building2, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Building2, Loader2, Plus } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import CreateTenantDialog from '@/components/admin/CreateTenantDialog';
 
 export default function TenantManagement() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     if (user) loadTenants();
@@ -73,8 +76,14 @@ export default function TenantManagement() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 pb-12">
-        <h1 className="text-2xl font-bold">🏢 Tenant Yönetimi</h1>
-        <p className="text-sm text-muted-foreground">Tüm restoranların özelliklerini ve limitlerini yönetin.</p>
+        <div className="flex justify-between items-start gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">🏢 Tenant Yönetimi</h1>
+            <p className="text-sm text-muted-foreground">Tüm restoranların özelliklerini ve limitlerini yönetin. Tenant ID'leri otomatik UUID olarak atanır.</p>
+          </div>
+          <Button onClick={() => setShowCreate(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-1" /> Yeni Tenant</Button>
+        </div>
+        <CreateTenantDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={() => loadTenants()} />
 
         {tenants.length === 0 && (
           <Card className="p-8 text-center text-muted-foreground">
