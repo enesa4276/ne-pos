@@ -1,23 +1,25 @@
-// AI özelliklerinin tanımları - süper admin panelinde gösterilir
+// AI özelliklerinin tanımları — AI Özellik ↔ API Sağlayıcı eşlemesi için kullanılır.
+// no_api_assignment=true olan özellikler (AI Phone gibi) kendi özel sistemini kullanır,
+// tenant başına ayrı API ataması yapılmaz.
 export const AI_FEATURES = {
-  ai_phone_order: {
-    label: 'AI Telefon Siparişi',
-    description: 'Müşteri aramalarını yanıtlayan ve sipariş alan AI asistan',
-    icon: '📞',
-  },
   smart_menu_suggestion: {
     label: 'Akıllı Menü Önerisi',
-    description: 'Müşteriye uygun menü ve upsell önerileri',
+    description: 'QR menüde müşteriye AI ile uygun ek/üst öneri sunar.',
     icon: '🍽️',
   },
   eod_summary: {
     label: 'Gün Sonu Özeti',
-    description: 'Günlük satış ve performans özeti',
+    description: 'Günlük satış ve performans özetini AI çıkarır.',
     icon: '📊',
+  },
+  menu_photo_import: {
+    label: 'Menü Fotoğraftan İçe Aktar',
+    description: 'Menü fotoğraflarından AI ile ürün ve kategori oluşturur (vision modeli gerekir).',
+    icon: '📸',
   },
   transcription: {
     label: 'Ses Transkripsiyonu',
-    description: 'Telefon görüşmelerini metne çevirme',
+    description: 'Genel amaçlı ses → metin (Deepgram).',
     icon: '🎙️',
   },
 };
@@ -27,6 +29,7 @@ export const PROVIDER_MODELS = {
   OpenAI: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
   OpenRouter: [
     'openai/gpt-4o-mini',
+    'openai/gpt-4o',
     'anthropic/claude-3.5-sonnet',
     'meta-llama/llama-3.1-70b-instruct',
     'google/gemini-flash-1.5',

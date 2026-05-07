@@ -3,16 +3,18 @@ import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, Plus, Sparkles, ShieldCheck } from 'lucide-react';
+import { Loader2, Plus, Sparkles, ShieldCheck, Pencil, Trash2, Key, Phone } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import AIConfigForm from '@/components/admin/AIConfigForm';
-import AIConfigCard from '@/components/admin/AIConfigCard';
+import AIProviderForm from '@/components/admin/AIProviderForm';
+import AIFeatureMapping from '@/components/admin/AIFeatureMapping';
 
 export default function AIApiManagement() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
-  const [configs, setConfigs] = useState([]);
-  const [tenants, setTenants] = useState([]);
+  const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -24,33 +26,23 @@ export default function AIApiManagement() {
 
   async function loadAll() {
     setLoading(true);
-    const [c, t] = await Promise.all([
-      base44.entities.AIApiConfig.list('-created_date'),
-      base44.entities.Tenant.list(),
-    ]);
-    setConfigs(c);
-    setTenants(t);
+    const c = await base44.entities.AIApiConfig.list('-created_date');
+    setProviders(c);
     setLoading(false);
   }
-
-  const tenantName = (id) => {
-    if (id === 'global' || !id) return '🌍 Global';
-    const t = tenants.find((x) => x.id === id);
-    return t?.company_name || 'Bilinmeyen';
-  };
 
   async function handleSave(form) {
     setSaving(true);
     try {
+      const payload = { ...form, tenant_id: 'global' };
       if (editing) {
-        await base44.entities.AIApiConfig.update(editing.id, form);
-        toast.success('Konfigürasyon güncellendi');
+        await base44.entities.AIApiConfig.update(editing.id, payload);
+        toast.success('API güncellendi');
       } else {
-        await base44.entities.AIApiConfig.create(form);
-        toast.success('Konfigürasyon eklendi');
+        await base44.entities.AIApiConfig.create(payload);
+        toast.success('API eklendi');
       }
-      setShowForm(false);
-      setEditing(null);
+      setShowForm(false); setEditing(null);
       loadAll();
     } catch (e) {
       toast.error('Kaydetme başarısız: ' + e.message);
@@ -58,24 +50,20 @@ export default function AIApiManagement() {
     setSaving(false);
   }
 
-  async function handleDelete(config) {
-    if (!confirm(`"${config.ai_feature}" konfigürasyonunu silmek istiyor musunuz?`)) return;
-    await base44.entities.AIApiConfig.delete(config.id);
+  async function handleDelete(p) {
+    if (!confirm('Bu API sağlayıcı kaydı silinsin mi?')) return;
+    await base44.entities.AIApiConfig.delete(p.id);
     toast.success('Silindi');
     loadAll();
   }
 
-  async function handleToggle(config, active) {
-    await base44.entities.AIApiConfig.update(config.id, { is_active: active });
+  async function handleToggle(p, active) {
+    await base44.entities.AIApiConfig.update(p.id, { is_active: active });
     loadAll();
   }
 
   if (userLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (!user?.is_super_admin && user?.role !== 'admin') {
@@ -91,58 +79,106 @@ export default function AIApiManagement() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 pb-12">
-        <div className="flex justify-between items-start gap-3 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Sparkles className="text-primary" /> AI API Yönetimi
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              AI özelliklerini sağlayıcı ve modellerle eşleştirin. API anahtarları sır olarak güvenli saklanır.
-            </p>
-          </div>
-          {!showForm && (
-            <Button onClick={() => { setEditing(null); setShowForm(true); }}>
-              <Plus className="h-4 w-4 mr-1" /> Yeni Konfigürasyon
-            </Button>
-          )}
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Sparkles className="text-primary" /> AI API Yönetimi
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            API sağlayıcı havuzu oluşturun ve AI özelliklerine atayın. API anahtarları sır olarak güvenli saklanır.
+          </p>
         </div>
 
-        <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
-          <p className="font-semibold mb-1">🔐 Güvenlik Notu</p>
-          <p>
-            API anahtarlarının değerlerini Base44 Dashboard → Environment Variables bölümünden tanımlayın.
-            Burada sadece sır <strong>adını</strong> seçin; gerçek değer asla uygulamada saklanmaz.
+        {/* AI Telefon bilgi kartı — burada yapılandırılmaz */}
+        <Card className="p-3 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800 text-xs">
+          <p className="font-semibold flex items-center gap-1.5 text-purple-700 dark:text-purple-300">
+            <Phone className="w-3.5 h-3.5" /> AI Telefon Asistanı
+          </p>
+          <p className="text-purple-700/80 dark:text-purple-300/80 mt-1">
+            AI Telefon kendi özel pipeline'ını kullanır (Twilio + Deepgram + OpenRouter). Bu sayfada yapılandırma gerekmez.
+            Tenant başına Twilio numarası, dil ve fallback ayarları ilgili tenantın <strong>Entegrasyonlar</strong> sekmesinden yapılır.
           </p>
         </Card>
 
-        {showForm && (
-          <AIConfigForm
-            initial={editing}
-            tenants={tenants}
-            saving={saving}
-            onSave={handleSave}
-            onCancel={() => { setShowForm(false); setEditing(null); }}
-          />
-        )}
+        <Tabs defaultValue="providers">
+          <TabsList className="grid grid-cols-2 w-full max-w-md">
+            <TabsTrigger value="providers">API Sağlayıcılar</TabsTrigger>
+            <TabsTrigger value="mapping">Özellik Eşlemesi</TabsTrigger>
+          </TabsList>
 
-        {configs.length === 0 && !showForm && (
-          <Card className="p-8 text-center text-muted-foreground">
-            Henüz konfigürasyon yok. <strong>Yeni Konfigürasyon</strong> ile başlayın.
-          </Card>
-        )}
+          {/* SAĞLAYICI HAVUZU */}
+          <TabsContent value="providers" className="space-y-3 mt-3">
+            <div className="flex justify-end">
+              {!showForm && (
+                <Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }} className="rounded-xl gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Yeni API
+                </Button>
+              )}
+            </div>
 
-        <div className="space-y-3">
-          {configs.map((config) => (
-            <AIConfigCard
-              key={config.id}
-              config={config}
-              tenantName={tenantName(config.tenant_id)}
-              onEdit={(c) => { setEditing(c); setShowForm(true); }}
-              onDelete={handleDelete}
-              onToggle={handleToggle}
-            />
-          ))}
-        </div>
+            <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300">
+              <p className="font-semibold mb-1">🔐 Güvenlik Notu</p>
+              <p>
+                API anahtarlarının değerlerini Base44 Dashboard → Environment Variables'dan tanımlayın.
+                Burada sadece sır <strong>adını</strong> seçin; gerçek değer asla uygulamada saklanmaz.
+              </p>
+            </Card>
+
+            {showForm && (
+              <AIProviderForm
+                initial={editing}
+                saving={saving}
+                onSave={handleSave}
+                onCancel={() => { setShowForm(false); setEditing(null); }}
+              />
+            )}
+
+            {providers.length === 0 && !showForm && (
+              <Card className="p-8 text-center text-muted-foreground text-sm">
+                Henüz API sağlayıcı yok. <strong>Yeni API</strong> ile başlayın.
+              </Card>
+            )}
+
+            <div className="space-y-2">
+              {providers.map((p) => (
+                <Card key={p.id} className="p-3">
+                  <div className="flex justify-between items-start gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="font-bold">{p.ai_provider}</Badge>
+                        <span className="font-mono text-xs truncate">{p.model_name}</span>
+                        {!p.is_active && <Badge variant="secondary" className="text-[10px]">Pasif</Badge>}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                        <Key className="h-3 w-3" /> <span className="font-mono">{p.secret_name}</span>
+                      </div>
+                      {p.notes && <div className="text-[11px] italic mt-0.5 text-muted-foreground">{p.notes}</div>}
+                      <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
+                        <span>🌡 {p.temperature ?? '-'}</span>
+                        <span>🎯 max {p.max_tokens ?? '-'}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Switch checked={p.is_active} onCheckedChange={(c) => handleToggle(p, c)} />
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(p); setShowForm(true); }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* ÖZELLİK EŞLEMESİ */}
+          <TabsContent value="mapping" className="mt-3">
+            <AIFeatureMapping providers={providers} onChanged={loadAll} />
+          </TabsContent>
+        </Tabs>
       </div>
     </ScrollArea>
   );

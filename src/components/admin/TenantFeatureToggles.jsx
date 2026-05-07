@@ -4,12 +4,13 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FEATURES } from '@/lib/features';
+import { NORMAL_FEATURES, AI_TENANT_FEATURES, FEATURES } from '@/lib/features';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { Sparkles, Wrench, Info } from 'lucide-react';
 
-// Sadece sistemde GERÇEKTEN var olan özellikleri toggle eder.
-// FEATURES listesi merkezi — yeni özellik eklendiğinde otomatik buraya gelir.
+// Tenant'a açılacak özellikleri yönetir.
+// İki grup: Normal Özellikler (operasyonel) + AI Özellikleri.
 export default function TenantFeatureToggles({ tenant, onSaved }) {
   async function toggleFeature(key, enabled) {
     const updated = { ...(tenant.features_enabled || {}), [key]: enabled };
@@ -31,32 +32,32 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 space-y-2">
-        <h3 className="font-bold text-sm mb-2">Özellikler</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          Sadece sistemde gerçekten kullanılabilir olan özellikler listelenir. Bir özellik aktif edilmezse,
-          restoran kullanıcısı o özelliği uygulamada hiç görmez.
-        </p>
-        <div className="space-y-2">
-          {Object.entries(FEATURES).map(([key, info]) => {
-            const enabled = !!tenant.features_enabled?.[key];
-            return (
-              <div key={key} className="flex items-start justify-between gap-3 p-3 bg-secondary/30 rounded-xl">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span>{info.icon}</span>
-                    <span className="font-medium text-sm">{info.name}</span>
-                    <Badge variant="outline" className="text-[10px]">{info.price}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{info.description}</p>
-                </div>
-                <Switch checked={enabled} onCheckedChange={(c) => toggleFeature(key, c)} />
-              </div>
-            );
-          })}
+      {/* NORMAL ÖZELLİKLER */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Wrench className="w-4 h-4 text-primary" />
+          <h3 className="font-bold text-sm">Operasyonel Özellikler</h3>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Restoranın günlük işleyişine yönelik temel modüller.
+        </p>
+        <FeatureGroup features={NORMAL_FEATURES} tenant={tenant} onToggle={toggleFeature} />
       </Card>
 
+      {/* AI ÖZELLİKLERİ */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-purple-500" />
+          <h3 className="font-bold text-sm">AI Özellikleri</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Yapay zeka tabanlı özellikler. Her birinin global API atamasının yapılmış olması gerekir
+          (<strong>Süper Admin → AI API Yönetimi</strong>).
+        </p>
+        <FeatureGroup features={AI_TENANT_FEATURES} tenant={tenant} onToggle={toggleFeature} isAI />
+      </Card>
+
+      {/* LİMİTLER */}
       <Card className="p-4 space-y-3">
         <h3 className="font-bold text-sm">Kullanım Limitleri</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -77,6 +78,39 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
           />
         </div>
       </Card>
+    </div>
+  );
+}
+
+function FeatureGroup({ features, tenant, onToggle, isAI = false }) {
+  return (
+    <div className="space-y-2">
+      {Object.entries(features).map(([key, info]) => {
+        const enabled = !!tenant.features_enabled?.[key];
+        return (
+          <div key={key} className="flex items-start justify-between gap-3 p-3 bg-secondary/30 rounded-xl">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span>{info.icon}</span>
+                <span className="font-medium text-sm">{info.name}</span>
+                <Badge variant="outline" className="text-[10px]">{info.price}</Badge>
+                {isAI && info.no_api_assignment && (
+                  <Badge variant="secondary" className="text-[10px] gap-1">
+                    <Info className="w-2.5 h-2.5" /> Özel sistem
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">{info.description}</p>
+              {info.requires_setup?.length > 0 && enabled && (
+                <p className="text-[10px] text-amber-600 mt-1">
+                  ⚠ Entegrasyonlar sekmesinden ayar gerekli: {info.requires_setup.join(', ')}
+                </p>
+              )}
+            </div>
+            <Switch checked={enabled} onCheckedChange={(c) => onToggle(key, c)} />
+          </div>
+        );
+      })}
     </div>
   );
 }

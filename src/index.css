@@ -88,43 +88,57 @@
   }
 }
 
-/* Print styles for receipts */
+/* Termal fiş yazdırma stilleri — ESC/POS uyumlu */
+@page {
+  margin: 0;
+  size: 80mm auto;
+}
+
 @media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
   body * {
     visibility: hidden !important;
   }
   #print-area, #print-area * {
     visibility: visible !important;
   }
-  #print-area img {
-    display: block !important;
-    visibility: visible !important;
-    max-height: 60px !important;
-    max-width: 160px !important;
-    object-fit: contain !important;
-    margin: 0 auto 4mm auto !important;
-  }
   #print-area {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     width: 80mm !important;
-    padding: 4mm !important;
-    font-size: 12px !important;
+    margin: 0 !important;
+    padding: 2mm 3mm !important;
     color: #000 !important;
     background: #fff !important;
+    font-family: "Courier New", "Lucida Console", Consolas, monospace !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  #print-area .print-title {
-    font-size: 18px !important;
-    font-weight: bold !important;
-    text-align: center !important;
+  #print-area img {
+    display: block !important;
+    visibility: visible !important;
+    max-height: 56px !important;
+    max-width: 70mm !important;
+    object-fit: contain !important;
+    margin: 0 auto 2mm auto !important;
   }
-  #print-area table {
-    width: 100% !important;
-    border-collapse: collapse !important;
+  /* Termal yazıcılarda gri tonları net basmaz — saf siyah/beyaz */
+  #print-area * {
+    color: #000 !important;
+    background: transparent !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
   }
-  #print-area td, #print-area th {
-    padding: 2px 0 !important;
-    text-align: left !important;
+  /* Sayfa sonunda boşluk — kesici temiz kessin */
+  #print-area::after {
+    content: '';
+    display: block;
+    height: 8mm;
   }
 }
