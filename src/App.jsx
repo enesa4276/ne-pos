@@ -19,6 +19,7 @@ import Account from '@/pages/Account';
 import AIPhoneDashboard from '@/pages/AIPhoneDashboard';
 import SuperAdminDashboard from '@/pages/super-admin/SuperAdminDashboard';
 import TenantManagement from '@/pages/admin/TenantManagement';
+import TenantDetail from '@/pages/admin/TenantDetail';
 import AIApiManagement from '@/pages/admin/AIApiManagement';
 import QRCodeManager from '@/pages/admin/QRCodeManager';
 import QRMenu from '@/pages/qr/QRMenu';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
       <Route element={<Layout />}>
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/tenants" element={<TenantManagement />} />
+        <Route path="/super-admin/tenants/:tenantId" element={<TenantDetail />} />
         <Route path="/super-admin/ai-api" element={<AIApiManagement />} />
       </Route>
 

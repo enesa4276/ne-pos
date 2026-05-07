@@ -16,7 +16,7 @@ const NAV = [
 
 const SUPER_ADMIN_NAV = [
   { to: '/super-admin',         label: 'Süper Admin', icon: Shield },
-  { to: '/super-admin/tenants', label: 'Tenants',     icon: LayoutGrid },
+  { to: '/super-admin/tenants', label: 'Restoranlar', icon: LayoutGrid },
   { to: '/super-admin/ai-api',  label: 'AI API',      icon: Settings },
 ];
 

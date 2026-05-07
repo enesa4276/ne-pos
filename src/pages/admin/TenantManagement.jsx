@@ -1,99 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from 'sonner';
-import { FEATURES } from '@/lib/features';
 import { Button } from '@/components/ui/button';
-import { Building2, Loader2, Plus, LogIn, Beaker, X } from 'lucide-react';
+import { Building2, Loader2, Plus, LogIn, Beaker, X, Search, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
 import CreateTenantDialog from '@/components/admin/CreateTenantDialog';
 
+// Tüm tenant'ların ÖZET listesi. Detaylar için her tenant'ın detay sayfasına gidilir.
 export default function TenantManagement() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
 
-  // Admin'i seçilen tenant'a süper kullanıcı olarak girer (selected_tenant_id set edip restoran sayfasına yönlendirir)
+  useEffect(() => { if (user) loadTenants(); }, [user]);
+
+  async function loadTenants() {
+    setLoading(true);
+    try {
+      const data = await base44.entities.Tenant.list('-created_date');
+      setTenants(data);
+    } catch (e) { toast.error('Tenant listesi yüklenemedi'); }
+    setLoading(false);
+  }
+
   async function impersonate(tenant) {
-    try {
-      await base44.auth.updateMe({ selected_tenant_id: tenant.tenant_id });
-      toast.success(`${tenant.company_name} olarak giriliyor…`);
-      // Hard reload ile context refresh
-      setTimeout(() => { window.location.href = '/'; }, 400);
-    } catch (e) {
-      toast.error('Giriş başarısız: ' + e.message);
-    }
+    await base44.auth.updateMe({ selected_tenant_id: tenant.tenant_id });
+    toast.success(`${tenant.company_name} olarak giriliyor…`);
+    setTimeout(() => { window.location.href = '/'; }, 400);
   }
 
-  // "Çıkış" — admin'i süper admin'e geri döndürür
   async function exitImpersonation() {
-    try {
-      await base44.auth.updateMe({ selected_tenant_id: '' });
-      toast.success('Süper admin paneline dönülüyor');
-      setTimeout(() => { window.location.href = '/super-admin'; }, 400);
-    } catch (e) {
-      toast.error('Çıkış başarısız');
-    }
+    await base44.auth.updateMe({ selected_tenant_id: '' });
+    toast.success('Süper admin paneline dönülüyor');
+    setTimeout(() => { window.location.href = '/super-admin'; }, 400);
   }
 
-  // Test için: rastgele bir tenanta gir
   async function impersonateRandom() {
     if (!tenants.length) return toast.error('Henüz tenant yok');
     const random = tenants[Math.floor(Math.random() * tenants.length)];
     impersonate(random);
   }
 
-  useEffect(() => {
-    if (user) loadTenants();
-  }, [user]);
-
-  async function loadTenants() {
-    setLoading(true);
-    try {
-      const data = await base44.entities.Tenant.list();
-      setTenants(data);
-    } catch (e) {
-      toast.error('Tenant listesi yüklenemedi');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function toggleFeature(tenant, featureKey, enabled) {
-    const updatedFeatures = { ...(tenant.features_enabled || {}), [featureKey]: enabled };
-    try {
-      await base44.entities.Tenant.update(tenant.id, { features_enabled: updatedFeatures });
-      toast.success(`${FEATURES[featureKey].name} ${enabled ? 'aktif' : 'pasif'}`);
-      loadTenants();
-    } catch (e) {
-      toast.error('Güncelleme başarısız');
-    }
-  }
-
-  async function updateLimit(tenant, limitKey, value) {
-    const updatedLimits = { ...(tenant.feature_limits || {}), [limitKey]: parseInt(value) || 0 };
-    try {
-      await base44.entities.Tenant.update(tenant.id, { feature_limits: updatedLimits });
-      toast.success('Limit güncellendi');
-      loadTenants();
-    } catch (e) {
-      toast.error('Güncelleme başarısız');
-    }
-  }
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return tenants.filter((t) => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        (t.company_name || '').toLowerCase().includes(q) ||
+        (t.owner_email || '').toLowerCase().includes(q) ||
+        (t.tenant_id || '').toLowerCase().includes(q)
+      );
+    });
+  }, [tenants, search, statusFilter]);
 
   if (userLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (!user?.is_super_admin && user?.role !== 'admin') {
@@ -105,126 +76,114 @@ export default function TenantManagement() {
     );
   }
 
+  const statuses = ['all', 'trial', 'active', 'suspended', 'cancelled'];
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 pb-12">
         <div className="flex justify-between items-start gap-3 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">🏢 Tenant Yönetimi</h1>
-            <p className="text-sm text-muted-foreground">Tüm restoranların özelliklerini ve limitlerini yönetin. Tenant ID'leri otomatik UUID olarak atanır.</p>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Building2 className="text-primary" /> Restoranlar (Tenant Yönetimi)
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tüm restoran hesaplarını buradan yönetin. Detayına girip özellik, entegrasyon ve istatistikleri görün.
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {user?.selected_tenant_id && (
-              <Button onClick={exitImpersonation} variant="outline" className="rounded-xl gap-1">
-                <X className="w-4 h-4" /> Tenant'tan Çık
+              <Button onClick={exitImpersonation} variant="outline" size="sm" className="rounded-xl gap-1">
+                <X className="w-3.5 h-3.5" /> Tenant'tan Çık
               </Button>
             )}
-            <Button onClick={impersonateRandom} variant="outline" className="rounded-xl gap-1">
-              <Beaker className="w-4 h-4" /> Rastgele Test Aç
+            <Button onClick={impersonateRandom} variant="outline" size="sm" className="rounded-xl gap-1">
+              <Beaker className="w-3.5 h-3.5" /> Rastgele Test
             </Button>
-            <Button onClick={() => setShowCreate(true)} className="rounded-xl gap-1">
-              <Plus className="w-4 h-4" /> Yeni Tenant
+            <Button onClick={() => setShowCreate(true)} size="sm" className="rounded-xl gap-1">
+              <Plus className="w-3.5 h-3.5" /> Yeni Tenant
             </Button>
           </div>
         </div>
         <CreateTenantDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={() => loadTenants()} />
 
-        {tenants.length === 0 && (
+        {/* Arama & filtre */}
+        <Card className="p-3 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Restoran adı, email, tenant ID ara..."
+              className="h-8 pl-8 text-sm rounded-lg"
+            />
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {statuses.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-secondary hover:bg-secondary/80'}`}
+              >
+                {s === 'all' ? 'Tümü' : s}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} tenant</span>
+        </Card>
+
+        {filtered.length === 0 && (
           <Card className="p-8 text-center text-muted-foreground">
-            Henüz tenant yok. Yeni restoran ekleyin.
+            {tenants.length === 0 ? 'Henüz tenant yok. Yeni restoran ekleyin.' : 'Filtreye uyan tenant yok.'}
           </Card>
         )}
 
-        {tenants.map((tenant) => (
-          <Card key={tenant.id} className="p-4 space-y-4">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <Building2 className="w-8 h-8 text-primary" />
-                <div>
-                  <h3 className="font-bold">{tenant.company_name}</h3>
-                  {tenant.subdomain && (
-                    <p className="text-sm text-muted-foreground">{tenant.subdomain}.nepos.app</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">{tenant.owner_email}</p>
-                </div>
-              </div>
-              <div className="flex gap-2 flex-wrap items-center">
-                <Badge variant={tenant.status === 'active' ? 'default' : 'secondary'}>
-                  {tenant.status}
-                </Badge>
-                <Badge variant="outline">{tenant.plan}</Badge>
-                <Button size="sm" className="rounded-xl gap-1" onClick={() => impersonate(tenant)}>
-                  <LogIn className="w-3.5 h-3.5" /> Bu Restoran Olarak Gir
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-secondary/20 rounded-lg">
-              <Stat label="Siparişler" value={tenant.total_orders || 0} />
-              <Stat label="Ciro" value={`€${(tenant.total_revenue || 0).toFixed(0)}`} />
-              <Stat label="AI Aramalar" value={tenant.total_ai_calls || 0} />
-              <Stat label="AI Maliyet" value={`€${(tenant.monthly_ai_cost || 0).toFixed(2)}`} red />
-            </div>
-
-            <div>
-              <div className="text-sm font-medium mb-2">Özellikler:</div>
-              <div className="space-y-2">
-                {Object.entries(FEATURES).map(([key, info]) => {
-                  const isEnabled = tenant.features_enabled?.[key] || false;
-                  return (
-                    <div key={key} className="flex items-center justify-between p-2 bg-secondary/10 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <span>{info.icon}</span>
-                        <span className="text-sm">{info.name}</span>
-                        <Badge variant="outline" className="text-xs">{info.price}</Badge>
-                      </div>
-                      <Switch checked={isEnabled} onCheckedChange={(c) => toggleFeature(tenant, key, c)} />
+        <div className="space-y-2">
+          {filtered.map((tenant) => {
+            const enabledFeatures = Object.entries(tenant.features_enabled || {}).filter(([, v]) => v).map(([k]) => k);
+            return (
+              <Card
+                key={tenant.id}
+                className="p-3 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(`/super-admin/tenants/${tenant.id}`)}
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold truncate">{tenant.company_name}</h3>
+                      <Badge variant={tenant.status === 'active' ? 'default' : tenant.status === 'suspended' ? 'destructive' : 'secondary'} className="text-[10px]">
+                        {tenant.status}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">{tenant.plan}</Badge>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium mb-2">Limitler:</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <LimitInput label="Max Sipariş/Ay" value={tenant.feature_limits?.max_orders_per_month || 500}
-                  onChange={(v) => updateLimit(tenant, 'max_orders_per_month', v)} />
-                <LimitInput label="Max Kullanıcı" value={tenant.feature_limits?.max_users || 5}
-                  onChange={(v) => updateLimit(tenant, 'max_users', v)} />
-                <LimitInput label="Max AI Arama/Ay" value={tenant.feature_limits?.max_ai_calls_per_month || 100}
-                  onChange={(v) => updateLimit(tenant, 'max_ai_calls_per_month', v)} />
-              </div>
-            </div>
-          </Card>
-        ))}
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {tenant.owner_email} · {tenant.total_orders || 0} sipariş · €{(tenant.total_revenue || 0).toFixed(0)}
+                    </p>
+                    {enabledFeatures.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        ✓ {enabledFeatures.length} özellik aktif
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl gap-1 h-8"
+                      onClick={(e) => { e.stopPropagation(); impersonate(tenant); }}
+                    >
+                      <LogIn className="w-3 h-3" /> Gir
+                    </Button>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </ScrollArea>
-  );
-}
-
-function Stat({ label, value, red }) {
-  return (
-    <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`font-bold ${red ? 'text-red-500' : ''}`}>{value}</div>
-    </div>
-  );
-}
-
-function LimitInput({ label, value, onChange }) {
-  const [v, setV] = useState(value);
-  useEffect(() => setV(value), [value]);
-  return (
-    <div>
-      <label className="text-xs text-muted-foreground">{label}</label>
-      <Input
-        type="number"
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        onBlur={() => v !== value && onChange(v)}
-        className="mt-1"
-      />
-    </div>
   );
 }
