@@ -5,11 +5,13 @@ import { Package, UtensilsCrossed, Phone, Globe } from 'lucide-react';
 import moment from 'moment';
 
 const COLUMNS = [
+  { id: 'open', label: 'Açık (Masa)', color: 'amber' },
   { id: 'pending', label: 'Bekliyor', color: 'amber' },
   { id: 'accepted', label: 'Kabul Edildi', color: 'blue' },
   { id: 'preparing', label: 'Hazırlanıyor', color: 'purple' },
   { id: 'ready_for_delivery_pickup', label: 'Hazır', color: 'orange' },
   { id: 'out_for_delivery', label: 'Yolda', color: 'green' },
+  { id: 'paid', label: 'Ödendi', color: 'green' },
   { id: 'fulfilled', label: 'Tamamlandı', color: 'gray' },
 ];
 

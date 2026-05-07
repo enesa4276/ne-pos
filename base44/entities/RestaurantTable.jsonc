@@ -17,6 +17,10 @@
         "bill_requested"
       ],
       "default": "empty"
+    },
+    "qr_label": {
+      "type": "string",
+      "description": "QR bask\u0131 i\u00e7in ek etiket (\u00f6rn. Bah\u00e7e / Salon)"
     }
   },
   "required": [

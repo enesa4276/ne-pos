@@ -1,48 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { useLang } from '@/lib/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Globe, Key, Store, Copy, Check, Upload, ImageIcon, Loader2 } from 'lucide-react';
-import AIPhoneSettings from '@/components/account/AIPhoneSettings';
+import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Upload, ImageIcon, Loader2, Tablet as TabletIcon, Users, QrCode } from 'lucide-react';
+import ReceiptPreview from '@/components/account/ReceiptPreview';
+import StaffManager from '@/components/account/StaffManager';
+import TableManager from '@/components/admin/TableManager';
+import QRCodeManager from '@/pages/admin/QRCodeManager';
+
+const DEFAULTS = {
+  company_name: '',
+  vat_number: '',
+  address: '',
+  phone: '',
+  email_receipt: '',
+  receipt_footer: 'Bedankt voor uw bezoek!',
+  receipt_logo_url: '',
+  receipt_font: 'default',
+  receipt_paper_size: '80mm',
+  receipt_font_size: 'medium',
+  max_tablets: 3,
+};
 
 export default function Account() {
   const { data: user, isLoading } = useCurrentUser();
-  const { t } = useLang();
-
-  const [form, setForm] = useState({
-    company_name: '',
-    vat_number: '',
-    address: '',
-    phone: '',
-    email_receipt: '',
-    receipt_footer: '',
-    receipt_logo_url: '',
-    receipt_font: 'default',
-    receipt_paper_size: '80mm',
-    receipt_font_size: 'medium',
-    wix_webhook_secret: '',
-    wix_site_id: '',
-    takeaway_webhook_secret: '',
-    takeaway_store_id: '',
-    uber_eats_webhook_secret: '',
-    uber_eats_store_id: '',
-  });
+  const [form, setForm] = useState(DEFAULTS);
   const [saving, setSaving] = useState(false);
-  const [copiedKey, setCopiedKey] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const logoInputRef = useRef(null);
-
-  const handleCopy = (text, key) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
 
   useEffect(() => {
     if (user) {
@@ -52,265 +44,239 @@ export default function Account() {
         address: user.address || '',
         phone: user.phone || '',
         email_receipt: user.email_receipt || '',
-        receipt_footer: user.receipt_footer || '',
+        receipt_footer: user.receipt_footer || 'Bedankt voor uw bezoek!',
         receipt_logo_url: user.receipt_logo_url || '',
         receipt_font: user.receipt_font || 'default',
         receipt_paper_size: user.receipt_paper_size || '80mm',
         receipt_font_size: user.receipt_font_size || 'medium',
-        wix_webhook_secret: user.wix_webhook_secret || '',
-        wix_site_id: user.wix_site_id || '',
-        takeaway_webhook_secret: user.takeaway_webhook_secret || '',
-        takeaway_store_id: user.takeaway_store_id || '',
-        uber_eats_webhook_secret: user.uber_eats_webhook_secret || '',
-        uber_eats_store_id: user.uber_eats_store_id || '',
+        max_tablets: user.max_tablets ?? 3,
       });
     }
   }, [user]);
 
-  const handleSave = async () => {
+  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const save = async () => {
     setSaving(true);
-    await base44.auth.updateMe(form);
+    try {
+      await base44.auth.updateMe(form);
+      toast.success('Ayarlar kaydedildi');
+    } catch (e) {
+      toast.error('Kaydedilemedi: ' + e.message);
+    }
     setSaving(false);
-    toast.success(t('savedSuccess'));
   };
-
-  const handleLogout = () => {
-    base44.auth.logout('/');
-  };
-
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-full">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
-  const field = (label, key, icon, placeholder = '') => (
-    <div className="space-y-1.5">
-      <Label className="flex items-center gap-1.5 text-sm font-medium">
-        {icon}{label}
-      </Label>
-      <Input
-        value={form[key]}
-        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        placeholder={placeholder}
-        className="rounded-xl"
-      />
-    </div>
-  );
-
-  const webhookUrlRow = (url, copyKey) => (
-    <div className="space-y-1.5">
-      <Label className="flex items-center gap-1.5 text-sm font-medium">
-        <Globe className="h-3.5 w-3.5" />{t('webhookUrl')}
-      </Label>
-      <div className="flex items-center gap-2">
-        <Input readOnly value={url} className="rounded-xl font-mono text-xs bg-secondary/50" />
-        <Button size="icon" variant="outline" className="shrink-0 rounded-xl" onClick={() => handleCopy(url, copyKey)}>
-          {copiedKey === copyKey ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-        </Button>
-      </div>
-    </div>
-  );
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, receipt_logo_url: file_url }));
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      update('receipt_logo_url', file_url);
+      toast.success('Logo yüklendi');
+    } catch (err) {
+      toast.error('Yüklenemedi');
+    }
     setUploadingLogo(false);
-    toast.success('Logo yüklendi');
   };
 
-  const selectField = (label, key, icon, options) => (
-    <div className="space-y-1.5">
-      <Label className="flex items-center gap-1.5 text-sm font-medium">
-        {icon}{label}
-      </Label>
-      <Select value={form[key]} onValueChange={val => setForm(f => ({ ...f, [key]: val }))}>
-        <SelectTrigger className="rounded-xl">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(o => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  const origin = window.location.origin;
-
-  const SaveBtn = () => (
-    <Button className="w-full rounded-xl gap-2 mt-2" onClick={handleSave} disabled={saving}>
-      <Save className="h-4 w-4" />
-      {saving ? t('saving') : t('saveSettings')}
-    </Button>
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 overflow-y-auto h-full">
+    <div className="p-4 md:p-6 max-w-6xl mx-auto w-full pb-20 md:pb-6 overflow-y-auto h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Restoran Ayarları</h1>
+          <p className="text-sm text-muted-foreground">{user?.full_name} · {user?.email}</p>
+        </div>
+        <Button variant="destructive" size="sm" className="rounded-xl gap-2" onClick={() => base44.auth.logout('/')}>
+          <LogOut className="h-4 w-4" /> Çıkış
+        </Button>
+      </div>
 
-      {/* User Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Mail className="h-4 w-4 text-primary" />{t('accountInfo')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
-            <div>
-              <p className="font-semibold">{user?.full_name || '—'}</p>
-              <p className="text-sm text-muted-foreground">{user?.email || '—'}</p>
-            </div>
-            <Button variant="destructive" size="sm" className="rounded-xl gap-2" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />{t('logout')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="info">
+        <TabsList className="rounded-xl flex-wrap h-auto">
+          <TabsTrigger value="info" className="rounded-lg gap-1.5"><Building2 className="h-3.5 w-3.5" />Genel</TabsTrigger>
+          <TabsTrigger value="receipt" className="rounded-lg gap-1.5"><Receipt className="h-3.5 w-3.5" />Termal Fiş</TabsTrigger>
+          <TabsTrigger value="tables" className="rounded-lg gap-1.5"><MapPin className="h-3.5 w-3.5" />Masalar</TabsTrigger>
+          <TabsTrigger value="staff" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" />Personel</TabsTrigger>
+          <TabsTrigger value="qr" className="rounded-lg gap-1.5"><QrCode className="h-3.5 w-3.5" />QR Menü</TabsTrigger>
+          <TabsTrigger value="devices" className="rounded-lg gap-1.5"><TabletIcon className="h-3.5 w-3.5" />Cihazlar</TabsTrigger>
+        </TabsList>
 
-      {/* Wix Integration */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="h-4 w-4 text-blue-500" />{t('wixIntegration')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/wixWebhook`, 'wix')}
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">
-            <p className="font-semibold mb-1">{t('wixHowToTitle')}</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>{t('wixStep1')}</li>
-              <li>{t('wixStep2')}</li>
-              <li>{t('wixStep3')}</li>
-              <li>{t('wixStep4')}</li>
-              <li>{t('wixStep5')}</li>
-            </ol>
-          </div>
-          {field(t('wixWebhookSecret'), 'wix_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret123')}
-          {field(t('wixSiteId'), 'wix_site_id', <Store className="h-3.5 w-3.5" />, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
-          <SaveBtn />
-        </CardContent>
-      </Card>
-
-      {/* Takeaway.com Integration */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Store className="h-4 w-4 text-green-500" />{t('takeawayIntegration')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/takeawayWebhook`, 'takeaway')}
-          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl p-3 text-xs text-green-700 dark:text-green-300">
-            <p className="font-semibold mb-1">{t('takeawayHowToTitle')}</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>{t('takeawayStep1')}</li>
-              <li>{t('takeawayStep2')}</li>
-              <li>{t('takeawayStep3')}</li>
-            </ol>
-          </div>
-          {field(t('takeawayWebhookSecret'), 'takeaway_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret456')}
-          {field(t('takeawayStoreId'), 'takeaway_store_id', <Store className="h-3.5 w-3.5" />, '12345')}
-          <SaveBtn />
-        </CardContent>
-      </Card>
-
-      {/* AI Phone Settings */}
-      <AIPhoneSettings origin={origin} />
-
-      {/* Uber Eats Integration */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Store className="h-4 w-4 text-purple-500" />{t('uberEatsIntegration')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {webhookUrlRow(`${origin}/functions/uberEatsWebhook`, 'uber')}
-          <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-3 text-xs text-purple-700 dark:text-purple-300">
-            <p className="font-semibold mb-1">{t('uberEatsHowToTitle')}</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>{t('uberEatsStep1')}</li>
-              <li>{t('uberEatsStep2')}</li>
-              <li>{t('uberEatsStep3')}</li>
-            </ol>
-          </div>
-          {field(t('uberEatsWebhookSecret'), 'uber_eats_webhook_secret', <Key className="h-3.5 w-3.5" />, 'mysecret789')}
-          {field(t('uberEatsStoreId'), 'uber_eats_store_id', <Store className="h-3.5 w-3.5" />, 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')}
-          <SaveBtn />
-        </CardContent>
-      </Card>
-
-      {/* Receipt Settings */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" />{t('receiptSettings')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {field(t('companyName'), 'company_name', <Building2 className="h-3.5 w-3.5" />, 'Brasserie De Kroon')}
-          {field(t('vatNumber'), 'vat_number', <Hash className="h-3.5 w-3.5" />, 'BE 0123.456.789')}
-          {field(t('address'), 'address', <MapPin className="h-3.5 w-3.5" />, 'Grote Markt 1, 9000 Gent')}
-          {field(t('phone'), 'phone', <Phone className="h-3.5 w-3.5" />, '+32 9 000 00 00')}
-          {field(t('emailReceipt'), 'email_receipt', <Mail className="h-3.5 w-3.5" />, 'info@restaurant.be')}
-          {field(t('receiptFooter'), 'receipt_footer', <Receipt className="h-3.5 w-3.5" />, t('thankYou'))}
-
-          {/* Logo Upload */}
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-sm font-medium">
-              <ImageIcon className="h-3.5 w-3.5" />Fiş Logosu
-            </Label>
-            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-            <div className="flex items-center gap-3">
-              {form.receipt_logo_url && (
-                <img src={form.receipt_logo_url} alt="Logo" className="h-12 w-auto rounded-lg border border-border object-contain bg-white p-1" />
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl gap-2"
-                onClick={() => logoInputRef.current?.click()}
-                disabled={uploadingLogo}
-              >
-                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {uploadingLogo ? 'Yükleniyor...' : 'Logo Yükle'}
-              </Button>
-              {form.receipt_logo_url && (
-                <Button type="button" variant="ghost" size="sm" className="text-destructive rounded-xl" onClick={() => setForm(f => ({ ...f, receipt_logo_url: '' }))}>
-                  Kaldır
+        {/* GENEL */}
+        <TabsContent value="info" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Restoran Bilgileri</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Restoran Adı" icon={<Building2 className="h-3.5 w-3.5" />} value={form.company_name} onChange={(v) => update('company_name', v)} placeholder="Brasserie De Kroon" />
+              <Field label="VAT/BTW Numarası" icon={<Hash className="h-3.5 w-3.5" />} value={form.vat_number} onChange={(v) => update('vat_number', v)} placeholder="BE 0123.456.789" />
+              <Field label="Adres" icon={<MapPin className="h-3.5 w-3.5" />} value={form.address} onChange={(v) => update('address', v)} placeholder="Grote Markt 1, 9000 Gent" />
+              <Field label="Telefon" icon={<Phone className="h-3.5 w-3.5" />} value={form.phone} onChange={(v) => update('phone', v)} placeholder="+32 9 000 00 00" />
+              <Field label="E-posta" icon={<Mail className="h-3.5 w-3.5" />} value={form.email_receipt} onChange={(v) => update('email_receipt', v)} placeholder="info@restaurant.be" />
+              <div className="md:col-span-2">
+                <Button className="rounded-xl gap-2" onClick={save} disabled={saving}>
+                  <Save className="h-4 w-4" /> {saving ? 'Kaydediliyor…' : 'Kaydet'}
                 </Button>
-              )}
-            </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TERMAL FİŞ */}
+        <TabsContent value="receipt" className="mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Termal Fiş Tasarımı</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-sm font-medium"><ImageIcon className="h-3.5 w-3.5" />Logo</Label>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {form.receipt_logo_url && (
+                      <img src={form.receipt_logo_url} alt="Logo" className="h-12 w-auto rounded-lg border border-border object-contain bg-white p-1" />
+                    )}
+                    <Button type="button" variant="outline" className="rounded-xl gap-2" onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}>
+                      {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploadingLogo ? 'Yükleniyor…' : 'Logo Yükle'}
+                    </Button>
+                    {form.receipt_logo_url && (
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive rounded-xl" onClick={() => update('receipt_logo_url', '')}>
+                        Kaldır
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <SelectField label="Kağıt" value={form.receipt_paper_size} onChange={(v) => update('receipt_paper_size', v)} options={[
+                    { value: '58mm', label: '58 mm' }, { value: '80mm', label: '80 mm' },
+                  ]} />
+                  <SelectField label="Font Stili" value={form.receipt_font} onChange={(v) => update('receipt_font', v)} options={[
+                    { value: 'default', label: 'Sans' }, { value: 'monospace', label: 'Mono' }, { value: 'serif', label: 'Serif' },
+                  ]} />
+                  <SelectField label="Font Boyutu" value={form.receipt_font_size} onChange={(v) => update('receipt_font_size', v)} options={[
+                    { value: 'small', label: 'Küçük' }, { value: 'medium', label: 'Orta' }, { value: 'large', label: 'Büyük' },
+                  ]} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Alt Yazı (Footer)</Label>
+                  <Textarea
+                    value={form.receipt_footer}
+                    onChange={(e) => update('receipt_footer', e.target.value)}
+                    placeholder="Bedankt voor uw bezoek!"
+                    className="rounded-xl resize-none"
+                    rows={2}
+                  />
+                </div>
+
+                <Button className="w-full rounded-xl gap-2" onClick={save} disabled={saving}>
+                  <Save className="h-4 w-4" /> {saving ? 'Kaydediliyor…' : 'Tasarımı Kaydet'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Canlı Önizleme</CardTitle></CardHeader>
+              <CardContent>
+                <ReceiptPreview form={form} />
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Bu önizleme, gerçek bir siparişle aynı stille basılır.
+                </p>
+              </CardContent>
+            </Card>
           </div>
+        </TabsContent>
 
-          {/* Visual Options */}
-          <div className="grid grid-cols-3 gap-3">
-            {selectField('Kağıt Boyutu', 'receipt_paper_size', <Receipt className="h-3.5 w-3.5" />, [
-              { value: '58mm', label: '58mm' },
-              { value: '80mm', label: '80mm' },
-            ])}
-            {selectField('Font Stili', 'receipt_font', <Receipt className="h-3.5 w-3.5" />, [
-              { value: 'default', label: 'Varsayılan' },
-              { value: 'monospace', label: 'Monospace' },
-              { value: 'serif', label: 'Serif' },
-            ])}
-            {selectField('Font Boyutu', 'receipt_font_size', <Receipt className="h-3.5 w-3.5" />, [
-              { value: 'small', label: 'Küçük' },
-              { value: 'medium', label: 'Orta' },
-              { value: 'large', label: 'Büyük' },
-            ])}
-          </div>
+        {/* MASALAR */}
+        <TabsContent value="tables" className="mt-4">
+          <TableManager />
+        </TabsContent>
 
-          <SaveBtn />
-        </CardContent>
-      </Card>
+        {/* PERSONEL */}
+        <TabsContent value="staff" className="mt-4">
+          <StaffManager />
+        </TabsContent>
 
+        {/* QR */}
+        <TabsContent value="qr" className="mt-4">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="h-[70vh] overflow-y-auto">
+                <QRCodeManager />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CIHAZLAR */}
+        <TabsContent value="devices" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><TabletIcon className="h-4 w-4 text-primary" />Tablet Cihazları</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-secondary/50 rounded-xl p-3 text-xs text-muted-foreground">
+                Garsonların kullanacağı tablet sayısını burada belirleyin. Her tablet aynı hesaptan giriş yapar ve sipariş alabilir.
+              </div>
+              <div className="space-y-1.5 max-w-xs">
+                <Label className="text-sm font-medium">Maksimum Tablet Sayısı</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={form.max_tablets}
+                  onChange={(e) => update('max_tablets', parseInt(e.target.value) || 1)}
+                  className="rounded-xl"
+                />
+              </div>
+              <Button className="rounded-xl gap-2" onClick={save} disabled={saving}>
+                <Save className="h-4 w-4" /> {saving ? 'Kaydediliyor…' : 'Kaydet'}
+              </Button>
+
+              <div className="border-t border-border pt-4 mt-2">
+                <p className="text-sm font-medium mb-2">Tablet'i Aç</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Her tablette tarayıcıyı açın ve aşağıdaki linke gidin. Garson masa numarasını seçerek sipariş almaya başlar.
+                </p>
+                <code className="block bg-secondary/70 p-3 rounded-xl text-xs break-all">
+                  {window.location.origin}/tablet
+                </code>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function Field({ label, icon, value, onChange, placeholder }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="flex items-center gap-1.5 text-sm font-medium">{icon}{label}</Label>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="rounded-xl" />
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

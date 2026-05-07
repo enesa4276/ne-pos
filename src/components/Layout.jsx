@@ -1,17 +1,16 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Phone, User, Shield, Tablet as TabletIcon } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, User, Shield, Tablet as TabletIcon, Package } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { cn } from '@/lib/utils';
 
 const NAV = [
-  { to: '/',          label: 'Masalar',   icon: LayoutGrid },
-  { to: '/pos',       label: 'POS',       icon: ShoppingCart },
-  { to: '/orders',    label: 'Siparişler',icon: ClipboardList },
-  { to: '/analytics', label: 'Analiz',    icon: BarChart3 },
-  { to: '/ai-phone',  label: 'AI Telefon',icon: Phone },
-  { to: '/admin',     label: 'Yönetim',   icon: Settings },
-  { to: '/account',   label: 'Hesap',     icon: User },
+  { to: '/',          label: 'Masalar',    icon: LayoutGrid },
+  { to: '/pos',       label: 'POS',        icon: ShoppingCart },
+  { to: '/orders',    label: 'Siparişler', icon: ClipboardList },
+  { to: '/analytics', label: 'Analiz',     icon: BarChart3 },
+  { to: '/admin',     label: 'Menü',       icon: Package },
+  { to: '/account',   label: 'Ayarlar',    icon: Settings },
 ];
 
 const SUPER_ADMIN_NAV = [

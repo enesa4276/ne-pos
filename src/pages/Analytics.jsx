@@ -16,6 +16,9 @@ const COLORS = ['#f97316', '#22c55e', '#3b82f6', '#a855f7', '#eab308', '#ef4444'
 
 export default function Analytics() {
   const [period, setPeriod] = useState('today');
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [paymentFilter, setPaymentFilter] = useState('all');
   const { data: user } = useCurrentUser();
 
   const { data: allOrders = [], isLoading } = useQuery({
@@ -24,14 +27,19 @@ export default function Analytics() {
     enabled: !!user?.email,
   });
 
-  // Filter by period and only paid orders
+  // Filter by period and only paid orders + filtreler
   const paidOrders = allOrders.filter(o => {
     if (o.status !== 'paid') return false;
     const d = moment(o.created_date);
-    if (period === 'today') return d.isSame(moment(), 'day');
-    if (period === 'week') return d.isAfter(moment().subtract(7, 'days'));
-    if (period === 'month') return d.isAfter(moment().subtract(30, 'days'));
-    return true; // all
+    let inPeriod = true;
+    if (period === 'today') inPeriod = d.isSame(moment(), 'day');
+    else if (period === 'week') inPeriod = d.isAfter(moment().subtract(7, 'days'));
+    else if (period === 'month') inPeriod = d.isAfter(moment().subtract(30, 'days'));
+    if (!inPeriod) return false;
+    if (sourceFilter !== 'all' && (o.order_source || 'pos_dine_in') !== sourceFilter) return false;
+    if (typeFilter !== 'all' && o.order_type !== typeFilter) return false;
+    if (paymentFilter !== 'all' && (o.payment_method || o.external_payment_method) !== paymentFilter) return false;
+    return true;
   });
 
   const totalRevenue = paidOrders.reduce((s, o) => s + (o.total || 0), 0);
@@ -86,7 +94,7 @@ export default function Analytics() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 pb-12">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-2xl font-bold">Analiz</h1>
           <Tabs value={period} onValueChange={setPeriod}>
             <TabsList>
@@ -97,6 +105,54 @@ export default function Analytics() {
             </TabsList>
           </Tabs>
         </div>
+
+        {/* Filtreler */}
+        <Card>
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground mr-1">Filtrele:</span>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="text-sm rounded-xl bg-secondary px-3 py-1.5 border-0"
+            >
+              <option value="all">Tüm Kaynaklar</option>
+              <option value="pos_dine_in">POS — Masa</option>
+              <option value="pos_takeaway">POS — Paket</option>
+              <option value="ai_phone">AI Telefon</option>
+              <option value="wix">Wix</option>
+              <option value="takeaway_com">Takeaway.com</option>
+              <option value="uber_eats">Uber Eats</option>
+            </select>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="text-sm rounded-xl bg-secondary px-3 py-1.5 border-0"
+            >
+              <option value="all">Tüm Tipler</option>
+              <option value="dine_in">Masada</option>
+              <option value="takeaway">Paket</option>
+              <option value="delivery">Teslimat</option>
+              <option value="phone">Telefon</option>
+            </select>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="text-sm rounded-xl bg-secondary px-3 py-1.5 border-0"
+            >
+              <option value="all">Tüm Ödemeler</option>
+              <option value="cash">Nakit</option>
+              <option value="card">Kart</option>
+            </select>
+            {(sourceFilter !== 'all' || typeFilter !== 'all' || paymentFilter !== 'all') && (
+              <button
+                onClick={() => { setSourceFilter('all'); setTypeFilter('all'); setPaymentFilter('all'); }}
+                className="text-xs text-primary hover:underline ml-auto"
+              >
+                Filtreleri temizle
+              </button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

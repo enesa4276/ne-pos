@@ -1,0 +1,37 @@
+{
+  "name": "Staff",
+  "type": "object",
+  "description": "Restoran personeli (garson, mutfak, y\u00f6netici)",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Bu kayd\u0131n ait oldu\u011fu restoran"
+    },
+    "name": {
+      "type": "string",
+      "description": "Personel ad\u0131"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "waiter",
+        "kitchen",
+        "manager",
+        "cashier"
+      ],
+      "default": "waiter"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "pin_code": {
+      "type": "string",
+      "description": "H\u0131zl\u0131 giri\u015f i\u00e7in PIN (opsiyonel)"
+    }
+  },
+  "required": [
+    "name",
+    "role"
+  ]
+}

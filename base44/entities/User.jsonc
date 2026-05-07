@@ -17,47 +17,39 @@
     "is_super_admin": {
       "type": "boolean",
       "default": false,
-      "description": "Sistem admin (t\u00fcm tenant'lara eri\u015fir)"
+      "description": "Sistem admin (t\u00fcm tenantlara eri\u015fir)"
     },
     "selected_tenant_id": {
       "type": "string",
-      "description": "Super admin hangi tenant'ta \u00e7al\u0131\u015f\u0131yor"
+      "description": "Super admin hangi tenantta \u00e7al\u0131\u015f\u0131yor"
     },
     "permissions": {
       "type": "array",
       "default": [],
       "items": {
         "type": "string"
-      },
-      "description": "['orders.create', 'products.edit']"
+      }
     },
     "company_name": {
-      "type": "string",
-      "description": "Company/Restaurant Name for receipts"
+      "type": "string"
     },
     "vat_number": {
-      "type": "string",
-      "description": "VAT Number for receipts"
+      "type": "string"
     },
     "address": {
-      "type": "string",
-      "description": "Address for receipts"
+      "type": "string"
     },
     "phone": {
-      "type": "string",
-      "description": "Phone number for receipts"
+      "type": "string"
     },
     "email_receipt": {
-      "type": "string",
-      "description": "Email to display on receipts"
+      "type": "string"
     },
     "receipt_footer": {
-      "type": "string",
-      "description": "Custom footer message for receipts"
+      "type": "string"
     },
     "receipt_logo_url": {
-      "type": "string",
-      "description": "Logo image URL to display on receipts"
+      "type": "string"
     },
     "receipt_font": {
       "type": "string",
@@ -85,45 +77,10 @@
       ],
       "default": "medium"
     },
-    "wix_webhook_secret": {
-      "type": "string"
-    },
-    "wix_site_id": {
-      "type": "string"
-    },
-    "takeaway_webhook_secret": {
-      "type": "string"
-    },
-    "takeaway_store_id": {
-      "type": "string"
-    },
-    "uber_eats_webhook_secret": {
-      "type": "string"
-    },
-    "uber_eats_store_id": {
-      "type": "string"
-    },
-    "menupro_restaurant_id": {
-      "type": "string",
-      "description": "Menupro restaurant/store ID"
+    "max_tablets": {
+      "type": "number",
+      "default": 3,
+      "description": "Bu hesap i\u00e7in izin verilen tablet say\u0131s\u0131"
     }
-  },
-  "required": [
-    "tenant_id",
-    "selected_tenant_id",
-    "company_name",
-    "vat_number",
-    "address",
-    "phone",
-    "email_receipt",
-    "receipt_footer",
-    "receipt_logo_url",
-    "wix_webhook_secret",
-    "wix_site_id",
-    "takeaway_webhook_secret",
-    "takeaway_store_id",
-    "uber_eats_webhook_secret",
-    "uber_eats_store_id",
-    "menupro_restaurant_id"
-  ]
+  }
 }
