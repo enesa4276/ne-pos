@@ -20,21 +20,33 @@ export default function QRMenu() {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
 
+  const [errorMsg, setErrorMsg] = useState(null);
+
   useEffect(() => { loadAll(); }, [tenantId, tableId]);
 
   async function loadAll() {
     setLoading(true);
+    setErrorMsg(null);
     try {
-      const tenants = await base44.entities.Tenant.filter({ tenant_id: tenantId });
-      setTenant(tenants[0]);
-      const tables = await base44.entities.RestaurantTable.filter({ tenant_id: tenantId, id: tableId });
-      setTable(tables[0]);
-      const cats = await base44.entities.Category.filter({ tenant_id: tenantId }, 'sort_order');
-      setCategories(cats);
-      const prods = await base44.entities.Product.filter({ tenant_id: tenantId }, 'name');
-      setProducts(prods);
-      if (cats.length) setActiveCat(cats[0].id);
-    } catch (e) { console.error(e); }
+      const res = await base44.functions.invoke('getQRMenuData', {
+        tenant_id: tenantId,
+        table_id: tableId,
+      });
+      const data = res?.data || {};
+      if (!data.tenant || !data.table) {
+        setErrorMsg(data.error || 'Geçersiz QR kod');
+        setLoading(false);
+        return;
+      }
+      setTenant(data.tenant);
+      setTable(data.table);
+      setCategories(data.categories || []);
+      setProducts(data.products || []);
+      if ((data.categories || []).length) setActiveCat(data.categories[0].id);
+    } catch (e) {
+      console.error('QR menu load failed:', e);
+      setErrorMsg(e?.response?.data?.error || e.message || 'Menü yüklenemedi');
+    }
     setLoading(false);
   }
 
@@ -69,15 +81,23 @@ export default function QRMenu() {
   const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
   const cartTotal = cart.reduce((s, i) => s + i.subtotal, 0);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <p className="text-sm text-muted-foreground">Menü yükleniyor…</p>
+    </div>
+  );
 
-  if (!tenant || !table) {
+  if (errorMsg || !tenant || !table) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
-        <div>
+        <div className="max-w-sm">
           <X className="w-12 h-12 mx-auto text-destructive mb-2" />
           <h2 className="font-bold">Geçersiz QR Kod</h2>
-          <p className="text-sm text-muted-foreground mt-1">Lütfen masanızdaki QR kodu kontrol edin.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {errorMsg || 'Lütfen masanızdaki QR kodu kontrol edin.'}
+          </p>
+          <Button onClick={loadAll} className="rounded-xl mt-4" size="sm">Tekrar Dene</Button>
         </div>
       </div>
     );
