@@ -30,12 +30,17 @@ export default function AIFeatureMapping({ providers, onChanged }) {
   }
 
   async function setMapping(featureKey, configId) {
+    // Optimistic UI — seçim anında ekrana yansıt
+    const prev = mappings;
+    setMappings((m) => ({ ...m, [featureKey]: configId === 'none' ? undefined : configId }));
+
     try {
-      // Önce: bu özelliği şu an hangi config kullanıyor? Onu generic ('transcription') yap ki kaybolmasın.
-      // Basit yaklaşım: seçilen config'in ai_feature'ı bu featureKey olur.
-      // Diğer aynı feature'a atanmış configleri 'transcription'a çevir (havuzda tut).
-      const same = providers.filter((p) => p.ai_feature === featureKey && p.id !== configId);
-      await Promise.all(same.map((p) => base44.entities.AIApiConfig.update(p.id, { ai_feature: 'transcription' })));
+      // Aynı feature'a atanmış diğer configleri havuza geri al ('transcription')
+      const same = (providers || []).filter((p) => p.ai_feature === featureKey && p.id !== configId);
+      // Sıralı yap — paralel istekler rate limit'i tetikliyor
+      for (const p of same) {
+        await base44.entities.AIApiConfig.update(p.id, { ai_feature: 'transcription' });
+      }
 
       if (configId === 'none') {
         toast.success('Eşleme kaldırıldı');
@@ -43,10 +48,14 @@ export default function AIFeatureMapping({ providers, onChanged }) {
         await base44.entities.AIApiConfig.update(configId, { ai_feature: featureKey });
         toast.success('Eşleme güncellendi');
       }
-      setMappings((m) => ({ ...m, [featureKey]: configId === 'none' ? undefined : configId }));
-      onChanged?.();
+      // Parent'a haber ver ama listeyi yeniden yükletme — providers state'i güncellensin yeter
+      onChanged?.({ featureKey, configId: configId === 'none' ? null : configId });
     } catch (e) {
-      toast.error('Hata: ' + e.message);
+      setMappings(prev); // başarısızsa geri al
+      const msg = String(e?.message || '').toLowerCase().includes('rate limit')
+        ? 'Çok hızlı tıkladınız — birkaç saniye sonra tekrar deneyin'
+        : 'Hata: ' + e.message;
+      toast.error(msg);
     }
   }
 

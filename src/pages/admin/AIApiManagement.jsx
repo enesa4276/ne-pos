@@ -199,7 +199,21 @@ export default function AIApiManagement() {
 
           {/* ÖZELLİK EŞLEMESİ */}
           <TabsContent value="mapping" className="mt-3">
-            <AIFeatureMapping providers={providers} onChanged={loadAll} />
+            <AIFeatureMapping
+              providers={providers}
+              onChanged={({ featureKey, configId }) => {
+                // Sadece lokal state'i güncelle — listeyi yeniden çekme (rate limit'i önle)
+                setProviders((list) =>
+                  list.map((p) => {
+                    if (p.id === configId) return { ...p, ai_feature: featureKey };
+                    if (p.ai_feature === featureKey && p.id !== configId) {
+                      return { ...p, ai_feature: 'transcription' };
+                    }
+                    return p;
+                  })
+                );
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>
