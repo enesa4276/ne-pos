@@ -29,29 +29,74 @@ export default function AIFeatureMapping({ providers, onChanged }) {
     setLoading(false);
   }
 
+  // Bir API'yi birden fazla özelliğe atayabilmek için:
+  // - Aynı (provider+model+secret) sahip başka bir kayıt zaten o özelliğe atanmışsa onu kullan.
+  // - Yoksa seçilen API kaydını "klonlayarak" yeni bir kayıt oluştur ve ona feature'ı ata.
+  // Böylece her AIApiConfig kaydı yine tek bir feature'ı temsil eder ama aynı API farklı feature'larda çalışabilir.
   async function setMapping(featureKey, configId) {
-    // Optimistic UI — seçim anında ekrana yansıt
     const prev = mappings;
+    // Optimistic UI
     setMappings((m) => ({ ...m, [featureKey]: configId === 'none' ? undefined : configId }));
 
     try {
-      // Aynı feature'a atanmış diğer configleri havuza geri al ('transcription')
-      const same = (providers || []).filter((p) => p.ai_feature === featureKey && p.id !== configId);
-      // Sıralı yap — paralel istekler rate limit'i tetikliyor
-      for (const p of same) {
+      if (configId === 'none') {
+        // Bu feature'a atanmış kaydı havuza al (transcription)
+        const current = (providers || []).find((p) => p.ai_feature === featureKey);
+        if (current) {
+          await base44.entities.AIApiConfig.update(current.id, { ai_feature: 'transcription' });
+        }
+        toast.success('Eşleme kaldırıldı');
+        onChanged?.({ featureKey, configId: null });
+        return;
+      }
+
+      const selected = (providers || []).find((p) => p.id === configId);
+      if (!selected) throw new Error('Seçilen API bulunamadı');
+
+      // Aynı (provider+model+secret) sahip ve zaten bu featureKey'e atanmış bir kayıt var mı?
+      const alreadyMapped = (providers || []).find((p) =>
+        p.ai_feature === featureKey &&
+        p.ai_provider === selected.ai_provider &&
+        p.model_name === selected.model_name &&
+        p.secret_name === selected.secret_name
+      );
+
+      let finalId = configId;
+      if (alreadyMapped) {
+        finalId = alreadyMapped.id;
+      } else if (selected.ai_feature && selected.ai_feature !== featureKey) {
+        // Seçilen kayıt başka bir feature'a atanmış → KLONLA, böylece her ikisi de çalışır.
+        const clone = await base44.entities.AIApiConfig.create({
+          tenant_id: selected.tenant_id || 'global',
+          ai_feature: featureKey,
+          ai_provider: selected.ai_provider,
+          model_name: selected.model_name,
+          secret_name: selected.secret_name,
+          temperature: selected.temperature,
+          max_tokens: selected.max_tokens,
+          monthly_budget_eur: selected.monthly_budget_eur,
+          is_active: true,
+          notes: selected.notes,
+        });
+        finalId = clone.id;
+      } else {
+        // Henüz hiçbir feature'a atanmamış → doğrudan ata
+        await base44.entities.AIApiConfig.update(configId, { ai_feature: featureKey });
+      }
+
+      // Bu featureKey'e atanmış DİĞER kayıtları geri al (birden fazla atama olmasın aynı feature'a)
+      const sameFeatureOthers = (providers || []).filter(
+        (p) => p.ai_feature === featureKey && p.id !== finalId
+      );
+      for (const p of sameFeatureOthers) {
         await base44.entities.AIApiConfig.update(p.id, { ai_feature: 'transcription' });
       }
 
-      if (configId === 'none') {
-        toast.success('Eşleme kaldırıldı');
-      } else {
-        await base44.entities.AIApiConfig.update(configId, { ai_feature: featureKey });
-        toast.success('Eşleme güncellendi');
-      }
-      // Parent'a haber ver ama listeyi yeniden yükletme — providers state'i güncellensin yeter
-      onChanged?.({ featureKey, configId: configId === 'none' ? null : configId });
+      setMappings((m) => ({ ...m, [featureKey]: finalId }));
+      toast.success('Eşleme güncellendi');
+      onChanged?.({ featureKey, configId: finalId, reload: !alreadyMapped && selected.ai_feature && selected.ai_feature !== featureKey });
     } catch (e) {
-      setMappings(prev); // başarısızsa geri al
+      setMappings(prev);
       const msg = String(e?.message || '').toLowerCase().includes('rate limit')
         ? 'Çok hızlı tıkladınız — birkaç saniye sonra tekrar deneyin'
         : 'Hata: ' + e.message;
@@ -73,6 +118,19 @@ export default function AIFeatureMapping({ providers, onChanged }) {
       {Object.entries(AI_FEATURES).map(([fKey, info]) => {
         const current = mappings[fKey];
         const mapped = providers.find((p) => p.id === current);
+        // Aynı (provider+model+secret) kombosunu tek seçenek olarak göster — temsilci olarak ilk aktif kaydı kullan.
+        const seen = new Set();
+        const uniqueOptions = [];
+        for (const p of providers.filter((x) => x.is_active)) {
+          const key = `${p.ai_provider}|${p.model_name}|${p.secret_name}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          // Eğer bu kombo zaten bu feature'a atanmışsa onun id'sini kullan, değilse herhangi bir aktif kaydını
+          const matchForFeature = providers.find(
+            (x) => x.is_active && x.ai_provider === p.ai_provider && x.model_name === p.model_name && x.secret_name === p.secret_name && x.ai_feature === fKey
+          );
+          uniqueOptions.push({ id: (matchForFeature || p).id, ai_provider: p.ai_provider, model_name: p.model_name });
+        }
         return (
           <Card key={fKey} className="p-3 space-y-2">
             <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -97,7 +155,7 @@ export default function AIFeatureMapping({ providers, onChanged }) {
               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="API seç..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— Atama yok —</SelectItem>
-                {providers.filter((p) => p.is_active).map((p) => (
+                {uniqueOptions.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.ai_provider} · {p.model_name}
                   </SelectItem>

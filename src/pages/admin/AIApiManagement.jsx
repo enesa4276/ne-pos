@@ -201,8 +201,13 @@ export default function AIApiManagement() {
           <TabsContent value="mapping" className="mt-3">
             <AIFeatureMapping
               providers={providers}
-              onChanged={({ featureKey, configId }) => {
-                // Sadece lokal state'i güncelle — listeyi yeniden çekme (rate limit'i önle)
+              onChanged={({ featureKey, configId, reload }) => {
+                // Klonlama olduysa sunucudan yeni kaydı çekmek için listeyi tazele
+                if (reload) {
+                  loadAll();
+                  return;
+                }
+                // Aksi halde lokal state'i güncelle (rate limit'i önle)
                 setProviders((list) =>
                   list.map((p) => {
                     if (p.id === configId) return { ...p, ai_feature: featureKey };
