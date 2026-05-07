@@ -1,5 +1,6 @@
 // AI Router: AIApiConfig'e göre doğru sağlayıcı + model + secret ile LLM çağırır.
-// Sır anahtarları frontend'e ASLA gönderilmez. Frontend yalnızca özelliği ve mesajı verir.
+// Birincil çağrı başarısız olursa fallback_config_id devreye girer.
+// Her çağrı AIApiCallLog'a yazılır (debug paneli için).
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.25";
 
@@ -50,7 +51,40 @@ async function callAnthropic({ apiKey, model, messages, max_tokens, temperature 
   };
 }
 
+async function runConfig(config, messages) {
+  const apiKey = Deno.env.get(config.secret_name);
+  if (!apiKey) throw new Error(`Sır bulunamadı: ${config.secret_name}`);
+
+  if (config.ai_provider === "OpenAI") {
+    return callOpenAICompatible({
+      baseUrl: "https://api.openai.com/v1",
+      apiKey, model: config.model_name, messages,
+      temperature: config.temperature, max_tokens: config.max_tokens,
+    });
+  } else if (config.ai_provider === "OpenRouter") {
+    return callOpenAICompatible({
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey, model: config.model_name, messages,
+      temperature: config.temperature, max_tokens: config.max_tokens,
+      extraHeaders: { "HTTP-Referer": "https://nepos.app", "X-Title": "Ne-Pos" },
+    });
+  } else if (config.ai_provider === "Groq") {
+    return callOpenAICompatible({
+      baseUrl: "https://api.groq.com/openai/v1",
+      apiKey, model: config.model_name, messages,
+      temperature: config.temperature, max_tokens: config.max_tokens,
+    });
+  } else if (config.ai_provider === "Anthropic") {
+    return callAnthropic({
+      apiKey, model: config.model_name, messages,
+      max_tokens: config.max_tokens, temperature: config.temperature,
+    });
+  }
+  throw new Error(`Sağlayıcı desteklenmiyor: ${config.ai_provider}`);
+}
+
 Deno.serve(async (req) => {
+  let logBase = null;
   try {
     if (req.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
     const base44 = createClientFromRequest(req);
@@ -83,65 +117,127 @@ Deno.serve(async (req) => {
         is_active: true,
       });
     }
-    const config = configs[0];
-    if (!config) {
+    const primary = configs[0];
+    if (!primary) {
       return Response.json({ error: `Bu özellik için AI konfigürasyonu yok: ${feature}` }, { status: 404 });
     }
 
-    const apiKey = Deno.env.get(config.secret_name);
-    if (!apiKey) {
-      return Response.json({ error: `Sır bulunamadı: ${config.secret_name}` }, { status: 500 });
-    }
+    logBase = {
+      tenant_id: tenantId || "global",
+      ai_feature: feature,
+      primary_config_id: primary.id,
+      user_email: user.email,
+      is_test: false,
+    };
 
-    let result;
-    if (config.ai_provider === "OpenAI") {
-      result = await callOpenAICompatible({
-        baseUrl: "https://api.openai.com/v1",
-        apiKey, model: config.model_name, messages,
-        temperature: config.temperature, max_tokens: config.max_tokens,
-      });
-    } else if (config.ai_provider === "OpenRouter") {
-      result = await callOpenAICompatible({
-        baseUrl: "https://openrouter.ai/api/v1",
-        apiKey, model: config.model_name, messages,
-        temperature: config.temperature, max_tokens: config.max_tokens,
-        extraHeaders: { "HTTP-Referer": "https://nepos.app", "X-Title": "Ne-Pos" },
-      });
-    } else if (config.ai_provider === "Groq") {
-      result = await callOpenAICompatible({
-        baseUrl: "https://api.groq.com/openai/v1",
-        apiKey, model: config.model_name, messages,
-        temperature: config.temperature, max_tokens: config.max_tokens,
-      });
-    } else if (config.ai_provider === "Anthropic") {
-      result = await callAnthropic({
-        apiKey, model: config.model_name, messages,
-        max_tokens: config.max_tokens, temperature: config.temperature,
-      });
-    } else {
-      return Response.json({ error: `Sağlayıcı desteklenmiyor: ${config.ai_provider}` }, { status: 400 });
-    }
-
-    // Kullanım logu — bütçe paneli için (best-effort, hata olursa response'u etkilemesin)
+    // Birincil deneme
+    const t0 = Date.now();
+    let result, usedConfig = primary, fallbackUsed = false, primaryError = null;
     try {
-      const usage = result.usage || {};
+      result = await runConfig(primary, messages);
+    } catch (err) {
+      primaryError = err.message;
+      // Fallback varsa dene
+      if (primary.fallback_config_id) {
+        const fb = await base44.asServiceRole.entities.AIApiConfig.get(primary.fallback_config_id);
+        if (fb && fb.is_active) {
+          try {
+            result = await runConfig(fb, messages);
+            usedConfig = fb;
+            fallbackUsed = true;
+          } catch (fbErr) {
+            // Hem primary hem fallback başarısız → log + 502
+            const duration = Date.now() - t0;
+            await base44.asServiceRole.entities.AIApiCallLog.create({
+              ...logBase,
+              used_config_id: fb.id,
+              ai_provider: fb.ai_provider,
+              model_name: fb.model_name,
+              status: "failed",
+              duration_ms: duration,
+              error_message: `Primary: ${primaryError} | Fallback: ${fbErr.message}`,
+              fallback_used: true,
+            });
+            return Response.json({ error: `Primary & fallback failed. Primary: ${primaryError}. Fallback: ${fbErr.message}` }, { status: 502 });
+          }
+        } else {
+          // fallback config bulunamadı / pasif
+          const duration = Date.now() - t0;
+          await base44.asServiceRole.entities.AIApiCallLog.create({
+            ...logBase,
+            used_config_id: primary.id,
+            ai_provider: primary.ai_provider,
+            model_name: primary.model_name,
+            status: "failed",
+            duration_ms: duration,
+            error_message: primaryError,
+            fallback_used: false,
+          });
+          return Response.json({ error: primaryError }, { status: 502 });
+        }
+      } else {
+        // Fallback yok
+        const duration = Date.now() - t0;
+        await base44.asServiceRole.entities.AIApiCallLog.create({
+          ...logBase,
+          used_config_id: primary.id,
+          ai_provider: primary.ai_provider,
+          model_name: primary.model_name,
+          status: "failed",
+          duration_ms: duration,
+          error_message: primaryError,
+          fallback_used: false,
+        });
+        return Response.json({ error: primaryError }, { status: 502 });
+      }
+    }
+
+    const duration = Date.now() - t0;
+    const usage = result.usage || {};
+    const totalTokens = usage.total_tokens || ((usage.prompt_tokens || 0) + (usage.completion_tokens || 0));
+
+    // Başarı logu (best-effort)
+    try {
+      await base44.asServiceRole.entities.AIApiCallLog.create({
+        ...logBase,
+        used_config_id: usedConfig.id,
+        ai_provider: usedConfig.ai_provider,
+        model_name: usedConfig.model_name,
+        status: fallbackUsed ? "fallback_success" : "success",
+        duration_ms: duration,
+        prompt_tokens: usage.prompt_tokens || 0,
+        completion_tokens: usage.completion_tokens || 0,
+        total_tokens: totalTokens,
+        error_message: fallbackUsed ? `Primary failed: ${primaryError}` : "",
+        fallback_used: fallbackUsed,
+      });
+    } catch (_) { /* ignore */ }
+
+    // Kullanım logu (token bütçesi paneli için)
+    try {
       const day = new Date().toISOString().slice(0, 10);
       await base44.asServiceRole.entities.AIUsageEntry.create({
         tenant_id: tenantId || "global",
-        config_id: config.id,
-        ai_provider: config.ai_provider,
-        model_name: config.model_name,
+        config_id: usedConfig.id,
+        ai_provider: usedConfig.ai_provider,
+        model_name: usedConfig.model_name,
         ai_feature: feature,
         prompt_tokens: usage.prompt_tokens || 0,
         completion_tokens: usage.completion_tokens || 0,
-        total_tokens: usage.total_tokens || ((usage.prompt_tokens || 0) + (usage.completion_tokens || 0)),
+        total_tokens: totalTokens,
         request_count: 1,
         is_test: false,
         day_key: day,
       });
-    } catch (_) { /* ignore logging errors */ }
+    } catch (_) { /* ignore */ }
 
-    return Response.json({ text: result.text, provider: config.ai_provider, model: config.model_name });
+    return Response.json({
+      text: result.text,
+      provider: usedConfig.ai_provider,
+      model: usedConfig.model_name,
+      fallback_used: fallbackUsed,
+      duration_ms: duration,
+    });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

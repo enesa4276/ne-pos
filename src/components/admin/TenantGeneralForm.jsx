@@ -30,10 +30,19 @@ export default function TenantGeneralForm({ tenant, onSaved, onDeleted }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  async function persist(patch) {
+    const res = await base44.functions.invoke('superAdminUpdateTenant', {
+      tenant_id: tenant.id,
+      patch,
+    });
+    if (res?.data?.error) throw new Error(res.data.error);
+    if (!res?.data?.ok) throw new Error('Güncelleme başarısız');
+  }
+
   async function save() {
     setSaving(true);
     try {
-      await base44.entities.Tenant.update(tenant.id, form);
+      await persist(form);
       toast.success('Bilgiler güncellendi');
       onSaved?.();
     } catch (e) {
@@ -44,16 +53,24 @@ export default function TenantGeneralForm({ tenant, onSaved, onDeleted }) {
 
   async function toggleSuspend() {
     const next = tenant.status === 'suspended' ? 'active' : 'suspended';
-    await base44.entities.Tenant.update(tenant.id, { status: next });
-    toast.success(next === 'suspended' ? 'Askıya alındı' : 'Aktifleştirildi');
-    onSaved?.();
+    try {
+      await persist({ status: next });
+      toast.success(next === 'suspended' ? 'Askıya alındı' : 'Aktifleştirildi');
+      onSaved?.();
+    } catch (e) {
+      toast.error(e.message);
+    }
   }
 
   async function deleteTenant() {
     if (!confirm(`"${tenant.company_name}" silinecek. Bu işlem geri alınamaz. Emin misiniz?`)) return;
     if (!confirm('Bu tenant ve TÜM verileri kalıcı olarak silinecek. Tekrar onaylıyor musunuz?')) return;
     try {
-      await base44.entities.Tenant.delete(tenant.id);
+      const res = await base44.functions.invoke('superAdminUpdateTenant', {
+        tenant_id: tenant.id,
+        action: 'delete',
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
       toast.success('Tenant silindi');
       onDeleted?.();
     } catch (e) {

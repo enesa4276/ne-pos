@@ -13,6 +13,7 @@ import AIProviderForm from '@/components/admin/AIProviderForm';
 import AIFeatureMapping from '@/components/admin/AIFeatureMapping';
 import AIProviderTestDialog from '@/components/admin/AIProviderTestDialog';
 import AIUsageChart from '@/components/admin/AIUsageChart';
+import AIApiCallLogs from '@/components/admin/AIApiCallLogs';
 
 export default function AIApiManagement() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
@@ -148,10 +149,11 @@ export default function AIApiManagement() {
         </Card>
 
         <Tabs defaultValue="providers">
-          <TabsList className="grid grid-cols-3 w-full max-w-xl">
+          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
             <TabsTrigger value="providers">API Sağlayıcılar</TabsTrigger>
             <TabsTrigger value="mapping">Özellik Eşlemesi</TabsTrigger>
             <TabsTrigger value="usage">Kullanım</TabsTrigger>
+            <TabsTrigger value="logs">Loglar</TabsTrigger>
           </TabsList>
 
           {/* SAĞLAYICI HAVUZU */}
@@ -176,6 +178,7 @@ export default function AIApiManagement() {
               <AIProviderForm
                 initial={editing}
                 saving={saving}
+                allProviders={providers}
                 onSave={handleSave}
                 onCancel={() => { setShowForm(false); setEditing(null); }}
               />
@@ -201,9 +204,13 @@ export default function AIApiManagement() {
                         <Key className="h-3 w-3" /> <span className="font-mono">{p.secret_name}</span>
                       </div>
                       {p.notes && <div className="text-[11px] italic mt-0.5 text-muted-foreground">{p.notes}</div>}
-                      <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
+                      <div className="flex gap-3 text-[10px] text-muted-foreground mt-1 flex-wrap">
                         <span>🌡 {p.temperature ?? '-'}</span>
                         <span>🎯 max {p.max_tokens ?? '-'}</span>
+                        {p.fallback_config_id && (() => {
+                          const fb = providers.find((x) => x.id === p.fallback_config_id);
+                          return fb ? <span className="text-amber-600">↩ Fallback: {fb.ai_provider} {fb.model_name}</span> : null;
+                        })()}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
@@ -232,6 +239,11 @@ export default function AIApiManagement() {
           {/* KULLANIM GRAFİĞİ */}
           <TabsContent value="usage" className="mt-3">
             <AIUsageChart providers={providers} />
+          </TabsContent>
+
+          {/* API ÇAĞRI LOGLARI */}
+          <TabsContent value="logs" className="mt-3">
+            <AIApiCallLogs />
           </TabsContent>
 
           {/* ÖZELLİK EŞLEMESİ */}

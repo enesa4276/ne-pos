@@ -39,6 +39,11 @@ export const PROVIDER_MODELS = {
   Anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
 };
 
+// Özellik anahtarı → görünen ad (logs vb. için)
+export const AI_FEATURES_LABELS = Object.fromEntries(
+  Object.entries(AI_FEATURES).map(([k, v]) => [k, v.label])
+);
+
 // Sağlayıcı için varsayılan secret adı (öneri)
 export const PROVIDER_DEFAULT_SECRETS = {
   OpenAI: 'OPENAI_API_KEY',

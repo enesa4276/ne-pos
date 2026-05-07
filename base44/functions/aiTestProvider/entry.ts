@@ -81,21 +81,63 @@ Deno.serve(async (req) => {
 
     const t0 = Date.now();
     let result;
-    if (ai_provider === "OpenAI") {
-      result = await callOpenAICompatible({ baseUrl: "https://api.openai.com/v1", apiKey, model: model_name, messages, temperature, max_tokens });
-    } else if (ai_provider === "OpenRouter") {
-      result = await callOpenAICompatible({
-        baseUrl: "https://openrouter.ai/api/v1", apiKey, model: model_name, messages, temperature, max_tokens,
-        extraHeaders: { "HTTP-Referer": "https://nepos.app", "X-Title": "Ne-Pos" },
-      });
-    } else if (ai_provider === "Groq") {
-      result = await callOpenAICompatible({ baseUrl: "https://api.groq.com/openai/v1", apiKey, model: model_name, messages, temperature, max_tokens });
-    } else if (ai_provider === "Anthropic") {
-      result = await callAnthropic({ apiKey, model: model_name, messages, max_tokens, temperature });
-    } else {
-      return Response.json({ error: `Sağlayıcı desteklenmiyor: ${ai_provider}` }, { status: 400 });
+    try {
+      if (ai_provider === "OpenAI") {
+        result = await callOpenAICompatible({ baseUrl: "https://api.openai.com/v1", apiKey, model: model_name, messages, temperature, max_tokens });
+      } else if (ai_provider === "OpenRouter") {
+        result = await callOpenAICompatible({
+          baseUrl: "https://openrouter.ai/api/v1", apiKey, model: model_name, messages, temperature, max_tokens,
+          extraHeaders: { "HTTP-Referer": "https://nepos.app", "X-Title": "Ne-Pos" },
+        });
+      } else if (ai_provider === "Groq") {
+        result = await callOpenAICompatible({ baseUrl: "https://api.groq.com/openai/v1", apiKey, model: model_name, messages, temperature, max_tokens });
+      } else if (ai_provider === "Anthropic") {
+        result = await callAnthropic({ apiKey, model: model_name, messages, max_tokens, temperature });
+      } else {
+        return Response.json({ error: `Sağlayıcı desteklenmiyor: ${ai_provider}` }, { status: 400 });
+      }
+    } catch (callErr) {
+      // Hata logu
+      try {
+        await base44.asServiceRole.entities.AIApiCallLog.create({
+          tenant_id: "global",
+          ai_feature: "test",
+          primary_config_id: config_id || "",
+          used_config_id: config_id || "",
+          ai_provider,
+          model_name,
+          status: "failed",
+          duration_ms: Date.now() - t0,
+          error_message: callErr.message,
+          fallback_used: false,
+          is_test: true,
+          user_email: user.email,
+        });
+      } catch (_) { /* ignore */ }
+      return Response.json({ error: callErr.message }, { status: 502 });
     }
     const ms = Date.now() - t0;
+
+    // Başarı logu
+    try {
+      const u = result.usage || {};
+      await base44.asServiceRole.entities.AIApiCallLog.create({
+        tenant_id: "global",
+        ai_feature: "test",
+        primary_config_id: config_id || "",
+        used_config_id: config_id || "",
+        ai_provider,
+        model_name,
+        status: "success",
+        duration_ms: ms,
+        prompt_tokens: u.prompt_tokens || 0,
+        completion_tokens: u.completion_tokens || 0,
+        total_tokens: u.total_tokens || ((u.prompt_tokens || 0) + (u.completion_tokens || 0)),
+        fallback_used: false,
+        is_test: true,
+        user_email: user.email,
+      });
+    } catch (_) { /* ignore */ }
 
     // Test çağrısını kullanım kayıtlarına ekle (is_test: true) — bütçe grafikleri için
     try {

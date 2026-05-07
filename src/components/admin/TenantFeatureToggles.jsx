@@ -23,14 +23,23 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
     setLimits(tenant.feature_limits || {});
   }, [tenant.id]);
 
+  async function persist(patch) {
+    // Süper admin değişiklikleri RLS yüzünden direct update'le düşebiliyor — service role üzerinden.
+    const res = await base44.functions.invoke('superAdminUpdateTenant', {
+      tenant_id: tenant.id,
+      patch,
+    });
+    if (res?.data?.error) throw new Error(res.data.error);
+    if (!res?.data?.ok) throw new Error('Güncelleme başarısız');
+  }
+
   async function toggleFeature(key, enabled) {
     const previous = features;
     const updated = { ...features, [key]: enabled };
     setFeatures(updated); // anında UI güncelle
     try {
-      await base44.entities.Tenant.update(tenant.id, { features_enabled: updated });
+      await persist({ features_enabled: updated });
       toast.success(`${FEATURES[key].name}: ${enabled ? 'Aktif' : 'Pasif'}`);
-      // onSaved'ı çağırmıyoruz — parent reload sayfayı sıfırlardı.
     } catch (e) {
       setFeatures(previous); // geri al
       toast.error(e.message || 'Güncelleme başarısız');
@@ -42,7 +51,7 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
     const updated = { ...limits, [key]: parseInt(value) || 0 };
     setLimits(updated);
     try {
-      await base44.entities.Tenant.update(tenant.id, { feature_limits: updated });
+      await persist({ feature_limits: updated });
       toast.success('Limit güncellendi');
     } catch (e) {
       setLimits(previous);

@@ -18,11 +18,12 @@ const DEFAULT_FORM = {
   max_tokens: 500,
   is_active: true,
   notes: '',
+  fallback_config_id: '',
   // ai_feature alanı sadece DB uyumluluğu için tutulur — "general" placeholder'ı kullanılır.
   ai_feature: 'transcription',
 };
 
-export default function AIProviderForm({ initial, onSave, onCancel, saving }) {
+export default function AIProviderForm({ initial, onSave, onCancel, saving, allProviders = [] }) {
   const [form, setForm] = useState(initial || DEFAULT_FORM);
   const [testOpen, setTestOpen] = useState(false);
 
@@ -99,6 +100,29 @@ export default function AIProviderForm({ initial, onSave, onCancel, saving }) {
             onChange={(e) => set('max_tokens', parseInt(e.target.value) || 0)}
             className="h-9"
           />
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2">
+          <Label className="text-xs">Yedek (Fallback) API</Label>
+          <Select
+            value={form.fallback_config_id || 'none'}
+            onValueChange={(v) => set('fallback_config_id', v === 'none' ? '' : v)}
+          >
+            <SelectTrigger className="h-9"><SelectValue placeholder="Yok" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Yok (fallback kullanma)</SelectItem>
+              {allProviders
+                .filter((p) => p.id && p.id !== initial?.id)
+                .map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.ai_provider} · {p.model_name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            Birincil API çağrısı başarısız olursa otomatik olarak bu API denenir.
+          </p>
         </div>
 
         <div className="space-y-1.5 md:col-span-2">

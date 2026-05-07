@@ -55,6 +55,10 @@
       "default": 0,
       "description": "Bu ay t\u00fcketilen tahmini maliyet"
     },
+    "fallback_config_id": {
+      "type": "string",
+      "description": "Birincil API ba\u015far\u0131s\u0131z olursa devreye girecek yedek AIApiConfig kayd\u0131n\u0131n id'si"
+    },
     "is_active": {
       "type": "boolean",
       "default": true
