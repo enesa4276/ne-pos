@@ -17,16 +17,13 @@
       "description": "Masada or Gel-Al or Delivery or Phone"
     },
     "table_id": {
-      "type": "string",
-      "description": "RestaurantTable ID, null for takeaway"
+      "type": "string"
     },
     "table_name": {
-      "type": "string",
-      "description": "Table name for display"
+      "type": "string"
     },
     "items": {
       "type": "array",
-      "description": "List of order items",
       "items": {
         "type": "object",
         "properties": {
@@ -74,7 +71,8 @@
         "ready_for_delivery_pickup",
         "out_for_delivery",
         "fulfilled",
-        "completed"
+        "completed",
+        "ready"
       ],
       "default": "open"
     },
@@ -104,6 +102,14 @@
         "ai_phone"
       ],
       "default": "pos_dine_in"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "Bu sipari\u015fi alan personel"
+    },
+    "staff_name": {
+      "type": "string",
+      "description": "Personel ad\u0131 (ge\u00e7mi\u015fte g\u00f6stermek i\u00e7in)"
     },
     "wix_order_id": {
       "type": "string"

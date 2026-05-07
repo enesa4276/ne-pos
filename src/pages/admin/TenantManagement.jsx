@@ -8,8 +8,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { FEATURES } from '@/lib/features';
 import { Button } from '@/components/ui/button';
-import { Building2, Loader2, Plus } from 'lucide-react';
+import { Building2, Loader2, Plus, LogIn, Beaker, X } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useNavigate } from 'react-router-dom';
 import CreateTenantDialog from '@/components/admin/CreateTenantDialog';
 
 export default function TenantManagement() {
@@ -17,6 +18,37 @@ export default function TenantManagement() {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const navigate = useNavigate();
+
+  // Admin'i seçilen tenant'a süper kullanıcı olarak girer (selected_tenant_id set edip restoran sayfasına yönlendirir)
+  async function impersonate(tenant) {
+    try {
+      await base44.auth.updateMe({ selected_tenant_id: tenant.tenant_id });
+      toast.success(`${tenant.company_name} olarak giriliyor…`);
+      // Hard reload ile context refresh
+      setTimeout(() => { window.location.href = '/'; }, 400);
+    } catch (e) {
+      toast.error('Giriş başarısız: ' + e.message);
+    }
+  }
+
+  // "Çıkış" — admin'i süper admin'e geri döndürür
+  async function exitImpersonation() {
+    try {
+      await base44.auth.updateMe({ selected_tenant_id: '' });
+      toast.success('Süper admin paneline dönülüyor');
+      setTimeout(() => { window.location.href = '/super-admin'; }, 400);
+    } catch (e) {
+      toast.error('Çıkış başarısız');
+    }
+  }
+
+  // Test için: rastgele bir tenanta gir
+  async function impersonateRandom() {
+    if (!tenants.length) return toast.error('Henüz tenant yok');
+    const random = tenants[Math.floor(Math.random() * tenants.length)];
+    impersonate(random);
+  }
 
   useEffect(() => {
     if (user) loadTenants();
@@ -81,7 +113,19 @@ export default function TenantManagement() {
             <h1 className="text-2xl font-bold">🏢 Tenant Yönetimi</h1>
             <p className="text-sm text-muted-foreground">Tüm restoranların özelliklerini ve limitlerini yönetin. Tenant ID'leri otomatik UUID olarak atanır.</p>
           </div>
-          <Button onClick={() => setShowCreate(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-1" /> Yeni Tenant</Button>
+          <div className="flex gap-2 flex-wrap">
+            {user?.selected_tenant_id && (
+              <Button onClick={exitImpersonation} variant="outline" className="rounded-xl gap-1">
+                <X className="w-4 h-4" /> Tenant'tan Çık
+              </Button>
+            )}
+            <Button onClick={impersonateRandom} variant="outline" className="rounded-xl gap-1">
+              <Beaker className="w-4 h-4" /> Rastgele Test Aç
+            </Button>
+            <Button onClick={() => setShowCreate(true)} className="rounded-xl gap-1">
+              <Plus className="w-4 h-4" /> Yeni Tenant
+            </Button>
+          </div>
         </div>
         <CreateTenantDialog open={showCreate} onClose={() => setShowCreate(false)} onCreated={() => loadTenants()} />
 
@@ -104,11 +148,14 @@ export default function TenantManagement() {
                   <p className="text-xs text-muted-foreground">{tenant.owner_email}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap items-center">
                 <Badge variant={tenant.status === 'active' ? 'default' : 'secondary'}>
                   {tenant.status}
                 </Badge>
                 <Badge variant="outline">{tenant.plan}</Badge>
+                <Button size="sm" className="rounded-xl gap-1" onClick={() => impersonate(tenant)}>
+                  <LogIn className="w-3.5 h-3.5" /> Bu Restoran Olarak Gir
+                </Button>
               </div>
             </div>
 

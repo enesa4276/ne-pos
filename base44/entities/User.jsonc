@@ -11,17 +11,14 @@
       "default": "user"
     },
     "tenant_id": {
-      "type": "string",
-      "description": "Kullan\u0131c\u0131n\u0131n ait oldu\u011fu tenant"
+      "type": "string"
     },
     "is_super_admin": {
       "type": "boolean",
-      "default": false,
-      "description": "Sistem admin (t\u00fcm tenantlara eri\u015fir)"
+      "default": false
     },
     "selected_tenant_id": {
-      "type": "string",
-      "description": "Super admin hangi tenantta \u00e7al\u0131\u015f\u0131yor"
+      "type": "string"
     },
     "permissions": {
       "type": "array",
@@ -48,6 +45,14 @@
     "receipt_footer": {
       "type": "string"
     },
+    "receipt_footer_2": {
+      "type": "string",
+      "description": "\u0130kinci sat\u0131r footer (\u00f6rn. instagram/website)"
+    },
+    "receipt_header_extra": {
+      "type": "string",
+      "description": "Ba\u015fl\u0131k alt\u0131 ekstra not"
+    },
     "receipt_logo_url": {
       "type": "string"
     },
@@ -73,25 +78,93 @@
       "enum": [
         "small",
         "medium",
-        "large"
+        "large",
+        "xlarge"
       ],
       "default": "medium"
     },
+    "receipt_font_weight": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "bold"
+      ],
+      "default": "normal"
+    },
+    "receipt_align": {
+      "type": "string",
+      "enum": [
+        "left",
+        "center"
+      ],
+      "default": "left"
+    },
+    "receipt_separator": {
+      "type": "string",
+      "enum": [
+        "dashed",
+        "solid",
+        "double",
+        "none"
+      ],
+      "default": "dashed",
+      "description": "\u00dcr\u00fcn ayra\u00e7 stili"
+    },
+    "receipt_show_logo": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_company": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_address": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_vat": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_table": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_datetime": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_order_number": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_extras": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_subtotal": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_tax": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_staff": {
+      "type": "boolean",
+      "default": true
+    },
+    "receipt_show_qr": {
+      "type": "boolean",
+      "default": false
+    },
+    "receipt_tax_rate": {
+      "type": "number",
+      "default": 21
+    },
     "max_tablets": {
       "type": "number",
-      "default": 3,
-      "description": "Bu hesap i\u00e7in izin verilen tablet say\u0131s\u0131"
+      "default": 3
     }
-  },
-  "required": [
-    "tenant_id",
-    "selected_tenant_id",
-    "company_name",
-    "vat_number",
-    "address",
-    "phone",
-    "email_receipt",
-    "receipt_footer",
-    "receipt_logo_url"
-  ]
+  }
 }

@@ -40,7 +40,10 @@ export default function OrderHistory() {
   const [search, setSearch] = useState('');
   const [source, setSource] = useState('all');
   const [status, setStatus] = useState('all');
-  const [dateRange, setDateRange] = useState('week'); // today | week | month | all
+  const [staffFilter, setStaffFilter] = useState('all');
+  const [dateRange, setDateRange] = useState('week'); // today | yesterday | week | month | thisMonth | custom | all
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [minAmount, setMinAmount] = useState('');
 
   const { data: orders = [], isLoading } = useQuery({
@@ -49,20 +52,46 @@ export default function OrderHistory() {
     enabled: !!user?.email,
   });
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['staff', user?.email],
+    queryFn: () => base44.entities.Staff.filter({ created_by: user?.email }, 'name').catch(() => []),
+    enabled: !!user?.email,
+  });
+
   const filtered = useMemo(() => {
     let list = orders;
 
-    // Tarih
-    if (dateRange !== 'all') {
-      const start = moment();
-      if (dateRange === 'today') start.startOf('day');
-      else if (dateRange === 'week') start.subtract(7, 'days');
-      else if (dateRange === 'month') start.subtract(30, 'days');
-      list = list.filter((o) => moment(o.created_date).isAfter(start));
+    // Tarih — preset veya özel aralık
+    if (dateRange === 'custom' && (customFrom || customTo)) {
+      const from = customFrom ? moment(customFrom).startOf('day') : null;
+      const to = customTo ? moment(customTo).endOf('day') : null;
+      list = list.filter((o) => {
+        const d = moment(o.created_date);
+        if (from && d.isBefore(from)) return false;
+        if (to && d.isAfter(to)) return false;
+        return true;
+      });
+    } else if (dateRange !== 'all' && dateRange !== 'custom') {
+      let start, end;
+      const now = moment();
+      if (dateRange === 'today') { start = now.clone().startOf('day'); end = now.clone().endOf('day'); }
+      else if (dateRange === 'yesterday') { start = now.clone().subtract(1, 'day').startOf('day'); end = now.clone().subtract(1, 'day').endOf('day'); }
+      else if (dateRange === 'week') { start = now.clone().subtract(7, 'days'); }
+      else if (dateRange === 'month') { start = now.clone().subtract(30, 'days'); }
+      else if (dateRange === 'thisMonth') { start = now.clone().startOf('month'); end = now.clone().endOf('month'); }
+      list = list.filter((o) => {
+        const d = moment(o.created_date);
+        if (start && d.isBefore(start)) return false;
+        if (end && d.isAfter(end)) return false;
+        return true;
+      });
     }
 
     if (source !== 'all') list = list.filter((o) => (o.order_source || 'pos_dine_in') === source);
     if (status !== 'all') list = list.filter((o) => NORMALIZE_STATUS(o.status) === status);
+    if (staffFilter !== 'all') {
+      list = list.filter((o) => (o.staff_id === staffFilter) || (o.staff_name === staffFilter));
+    }
 
     if (minAmount) {
       const min = parseFloat(minAmount);
@@ -75,12 +104,13 @@ export default function OrderHistory() {
         (o.customer_name || '').toLowerCase().includes(q) ||
         (o.table_name || '').toLowerCase().includes(q) ||
         (o.customer_phone || '').includes(q) ||
-        (o.notes || '').toLowerCase().includes(q)
+        (o.notes || '').toLowerCase().includes(q) ||
+        (o.staff_name || '').toLowerCase().includes(q)
       );
     }
 
     return list;
-  }, [orders, source, status, dateRange, minAmount, search]);
+  }, [orders, source, status, staffFilter, dateRange, customFrom, customTo, minAmount, search]);
 
   const totalRevenue = filtered.reduce((s, o) => s + (o.total || 0), 0);
 
@@ -106,54 +136,98 @@ export default function OrderHistory() {
 
       {/* Filtreler */}
       <Card className="mb-4">
-        <CardContent className="p-3 flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <CardContent className="p-3 space-y-3">
+          {/* Tarih kısayolları */}
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-bold mr-1">Tarih:</span>
+            {[
+              ['today', 'Bugün'],
+              ['yesterday', 'Dün'],
+              ['week', '7 Gün'],
+              ['month', '30 Gün'],
+              ['thisMonth', 'Bu Ay'],
+              ['all', 'Tümü'],
+              ['custom', 'Özel Aralık'],
+            ].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setDateRange(k)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                  dateRange === k ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary/70'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+            {dateRange === 'custom' && (
+              <div className="flex items-center gap-1 ml-1">
+                <Input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-8 rounded-xl text-xs w-36"
+                />
+                <span className="text-xs text-muted-foreground">→</span>
+                <Input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-8 rounded-xl text-xs w-36"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Diğer filtreler */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Müşteri / masa / garson / telefon"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 rounded-xl h-9"
+              />
+            </div>
+            <Select value={source} onValueChange={setSource}>
+              <SelectTrigger className="w-40 rounded-xl h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Kaynaklar</SelectItem>
+                <SelectItem value="pos_dine_in">POS — Masa</SelectItem>
+                <SelectItem value="pos_takeaway">POS — Gel-Al</SelectItem>
+                <SelectItem value="ai_phone">AI Telefon</SelectItem>
+                <SelectItem value="wix">Wix</SelectItem>
+                <SelectItem value="takeaway_com">Takeaway.com</SelectItem>
+                <SelectItem value="uber_eats">Uber Eats</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-36 rounded-xl h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Durumlar</SelectItem>
+                <SelectItem value="pending">Bekliyor</SelectItem>
+                <SelectItem value="preparing">Hazırlanıyor</SelectItem>
+                <SelectItem value="ready">Hazır</SelectItem>
+                <SelectItem value="completed">Tamamlandı</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={staffFilter} onValueChange={setStaffFilter}>
+              <SelectTrigger className="w-40 rounded-xl h-9"><SelectValue placeholder="Garson" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Garsonlar</SelectItem>
+                {staffList.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
-              placeholder="Müşteri / masa / telefon"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 rounded-xl h-9"
+              type="number"
+              placeholder="Min € tutar"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+              className="w-28 rounded-xl h-9"
             />
           </div>
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32 rounded-xl h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Bugün</SelectItem>
-              <SelectItem value="week">7 gün</SelectItem>
-              <SelectItem value="month">30 gün</SelectItem>
-              <SelectItem value="all">Tümü</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={source} onValueChange={setSource}>
-            <SelectTrigger className="w-40 rounded-xl h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Kaynaklar</SelectItem>
-              <SelectItem value="pos_dine_in">POS — Masa</SelectItem>
-              <SelectItem value="pos_takeaway">POS — Gel-Al</SelectItem>
-              <SelectItem value="ai_phone">AI Telefon</SelectItem>
-              <SelectItem value="wix">Wix</SelectItem>
-              <SelectItem value="takeaway_com">Takeaway.com</SelectItem>
-              <SelectItem value="uber_eats">Uber Eats</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-36 rounded-xl h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tüm Durumlar</SelectItem>
-              <SelectItem value="pending">Bekliyor</SelectItem>
-              <SelectItem value="preparing">Hazırlanıyor</SelectItem>
-              <SelectItem value="ready">Hazır</SelectItem>
-              <SelectItem value="completed">Tamamlandı</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            type="number"
-            placeholder="Min € tutar"
-            value={minAmount}
-            onChange={(e) => setMinAmount(e.target.value)}
-            className="w-28 rounded-xl h-9"
-          />
         </CardContent>
       </Card>
 
@@ -194,8 +268,9 @@ export default function OrderHistory() {
                     {o.items?.map((i) => `${i.quantity}× ${i.product_name}`).join(', ') || '—'}
                   </div>
 
-                  {(o.customer_phone || o.notes) && (
+                  {(o.customer_phone || o.notes || o.staff_name) && (
                     <div className="text-[11px] text-muted-foreground space-y-0.5 mb-2">
+                      {o.staff_name && <p>👤 Garson: <span className="font-semibold">{o.staff_name}</span></p>}
                       {o.customer_phone && <p>📞 {o.customer_phone}</p>}
                       {o.notes && <p className="line-clamp-1">📝 {o.notes}</p>}
                     </div>

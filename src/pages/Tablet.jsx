@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -7,16 +7,17 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Minus, Send, Loader2, Package, UtensilsCrossed, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Dokunmatik dostu tablet POS modu
+// Dokunmatik dostu tablet POS modu — URL'de ?staffId=xxx ile personele özel açılır.
 export default function Tablet() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
+  const [searchParams] = useSearchParams();
+  const staffIdFromUrl = searchParams.get('staffId') || null;
 
-  // Adım: 'select' (masa seç) veya 'order' (sipariş al)
   const [step, setStep] = useState('select');
-  const [selectedTable, setSelectedTable] = useState(null); // { id, name } veya { id: null, name: 'Paket' }
-  const [waiter, setWaiter] = useState(null);
+  const [selectedTable, setSelectedTable] = useState(null);
+  const [waiter, setWaiter] = useState(null); // { id, name } | null
   const [activeCat, setActiveCat] = useState(null);
   const [cart, setCart] = useState([]);
 
@@ -40,6 +41,14 @@ export default function Tablet() {
     queryFn: () => base44.entities.Staff.filter({ created_by: user?.email, is_active: true }, 'name').catch(() => []),
     enabled: !!user?.email,
   });
+
+  // URL'de staffId varsa o personeli otomatik seç
+  useEffect(() => {
+    if (staffIdFromUrl && staff.length && !waiter) {
+      const found = staff.find((s) => s.id === staffIdFromUrl);
+      if (found) setWaiter({ id: found.id, name: found.name });
+    }
+  }, [staffIdFromUrl, staff, waiter]);
 
   const createOrder = useMutation({
     mutationFn: (d) => base44.entities.Order.create(d),
@@ -74,11 +83,12 @@ export default function Tablet() {
       table_id: selectedTable.id || null,
       table_name: selectedTable.name,
       items: cart,
-      status: 'open',
+      status: 'pending',
       total: grandTotal,
       sent_to_kitchen: true,
       order_source: selectedTable.id ? 'pos_dine_in' : 'pos_takeaway',
-      notes: waiter ? `Garson: ${waiter}` : undefined,
+      staff_id: waiter?.id || null,
+      staff_name: waiter?.name || null,
     });
     if (selectedTable.id) {
       await base44.entities.RestaurantTable.update(selectedTable.id, { status: 'occupied' });
@@ -102,19 +112,20 @@ export default function Tablet() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-3xl mx-auto w-full space-y-6">
-          {/* Garson seçimi */}
+          {/* Garson seçimi — URL'den geldiyse kilitli görünür */}
           {staff.length > 0 && (
             <div>
               <h2 className="text-sm font-bold mb-3 flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
-                <Users className="w-4 h-4" /> Garson
+                <Users className="w-4 h-4" /> Garson {staffIdFromUrl && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full normal-case">Bu tablete atanmış</span>}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {staff.map((s) => (
                   <button
                     key={s.id}
-                    onClick={() => setWaiter(s.name)}
-                    className={`px-4 py-2 rounded-2xl font-bold text-sm transition-all ${
-                      waiter === s.name ? 'bg-primary text-primary-foreground shadow-md' : 'bg-card border'
+                    disabled={!!staffIdFromUrl && s.id !== staffIdFromUrl}
+                    onClick={() => setWaiter({ id: s.id, name: s.name })}
+                    className={`px-4 py-2 rounded-2xl font-bold text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+                      waiter?.id === s.id ? 'bg-primary text-primary-foreground shadow-md' : 'bg-card border'
                     }`}
                   >
                     {s.name}
@@ -191,7 +202,7 @@ export default function Tablet() {
         </Button>
         <div className="text-center">
           <h1 className="text-xl font-black">{selectedTable?.name}</h1>
-          {waiter && <p className="text-xs text-muted-foreground">Garson: {waiter}</p>}
+          {waiter && <p className="text-xs text-muted-foreground">Garson: {waiter.name}</p>}
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">{cart.length} ürün</p>

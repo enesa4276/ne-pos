@@ -1,21 +1,20 @@
 import React from 'react';
-import moment from 'moment';
-import { formatCurrency } from '@/lib/i18n';
+import ReceiptBody from '@/components/account/receipt/ReceiptBody';
 
-export function KitchenReceipt({ order, t }) {
+// Mutfak fişi — sade, sadece ürünler. Kasa fişine göre minimalist.
+export function KitchenReceipt({ order }) {
   if (!order) return null;
-  const tr = t || ((k) => k);
   return (
     <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
       <div className="print-title text-center text-xl font-bold border-b-2 border-dashed border-black pb-2 mb-3">
-        {tr('kitchenTicket')}
+        MUTFAK FİŞİ
       </div>
       <div className="text-center text-lg font-bold mb-2">
-        {order.order_type === 'takeaway' ? tr('package') : order.table_name || tr('tables')}
+        {order.order_type === 'takeaway' ? 'PAKET' : (order.table_name || '—')}
       </div>
-      <div className="text-center text-sm mb-4">
-        {moment().format('DD.MM.YYYY HH:mm')}
-      </div>
+      {order.staff_name && (
+        <div className="text-center text-sm mb-2">Garson: {order.staff_name}</div>
+      )}
       <div className="border-t border-dashed border-black pt-2">
         {order.items?.map((item, i) => (
           <div key={i} className="mb-3">
@@ -36,77 +35,13 @@ export function KitchenReceipt({ order, t }) {
   );
 }
 
-export function CustomerReceipt({ order, total: totalProp, t, companyInfo }) {
+// Müşteri fişi — Hesap → Termal Fiş'te tasarlanan tek tip şablon kullanılır.
+// `companyInfo` user'ın receipt_* alanlarını içeren obje olmalı.
+export function CustomerReceipt({ order, companyInfo }) {
   if (!order) return null;
-  const tr = t || ((k) => k);
-  const ci = companyInfo || {};
-  const total = totalProp ?? order.items?.reduce((s, i) => s + i.subtotal, 0) ?? 0;
-
   return (
-    <div id="print-area" className="hidden print:block p-4 bg-white text-black font-mono">
-      {ci.receipt_logo_url && (
-        <div className="flex justify-center mb-2">
-          <img src={ci.receipt_logo_url} alt="Logo" style={{ maxHeight: '60px', maxWidth: '160px', objectFit: 'contain' }} />
-        </div>
-      )}
-      {ci.company_name && (
-        <div className="print-title text-center text-xl font-bold mb-1">
-          {ci.company_name}
-        </div>
-      )}
-      {ci.vat_number && (
-        <div className="text-center text-xs">
-          BTW/TVA: {ci.vat_number}
-        </div>
-      )}
-      <div className="text-center text-xs mb-3">
-        {[ci.address, ci.phone, ci.email_receipt].filter(Boolean).join(' • ') || ''}
-      </div>
-      <div className="border-t border-dashed border-black pt-2 text-sm mb-2">
-        <div className="flex justify-between">
-          <span>{order.order_type === 'takeaway' ? tr('takeaway') : order.table_name}</span>
-          <span>{moment().format('DD.MM.YYYY HH:mm')}</span>
-        </div>
-      </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-black">
-            <th className="text-left py-1">{tr('product')}</th>
-            <th className="text-center">{tr('quantity')}</th>
-            <th className="text-right">{tr('amount')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {order.items?.map((item, i) => (
-            <React.Fragment key={i}>
-              <tr>
-                <td className="py-1">{item.product_name}</td>
-                <td className="text-center">{item.quantity}</td>
-                <td className="text-right">{formatCurrency(item.subtotal)}</td>
-              </tr>
-              {item.extras?.map((e, j) => (
-                <tr key={j}>
-                  <td className="pl-2 text-xs" colSpan={2}>+ {e.name} (+{formatCurrency(e.price)})</td>
-                  <td></td>
-                </tr>
-              ))}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
-      <div className="border-t border-dashed border-black mt-2 pt-2 text-sm">
-        <div className="flex justify-between text-lg font-bold pt-1">
-          <span>{tr('total')}</span><span>{formatCurrency(total)}</span>
-        </div>
-      </div>
-      {ci.vat_number && (
-        <div className="text-center text-xs mt-2 border-t border-dashed border-black pt-2">
-          BTW/TVA: {ci.vat_number}
-        </div>
-      )}
-      <div className="text-center text-xs mt-3">
-        {ci.receipt_footer || tr('thankYou')}
-      </div>
+    <div id="print-area" className="hidden print:block">
+      <ReceiptBody order={order} companyInfo={companyInfo} />
     </div>
   );
 }

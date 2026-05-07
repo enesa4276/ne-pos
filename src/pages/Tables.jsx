@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -11,8 +11,18 @@ import TableGrid from '@/components/pos/TableGrid';
 
 export default function Tables() {
   const navigate = useNavigate();
-  const { data: user } = useCurrentUser();
+  const { data: user, isLoading: userLoading } = useCurrentUser();
   const { t } = useLang();
+
+  // Admin/super-admin ise OTOMATİK olarak süper admin paneline yönlendir.
+  // İstisna: bir tenant seçtiyse (selected_tenant_id set ise) restoran sayfasında kalsın.
+  useEffect(() => {
+    if (userLoading || !user) return;
+    const isAdmin = user.role === 'admin' || user.is_super_admin;
+    if (isAdmin && !user.selected_tenant_id) {
+      navigate('/super-admin', { replace: true });
+    }
+  }, [user, userLoading, navigate]);
 
   const { data: tables = [], isLoading } = useQuery({
     queryKey: ['tables', user?.email],
