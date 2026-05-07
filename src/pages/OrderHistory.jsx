@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, FileText, Search, Calendar, Globe, UtensilsCrossed, Package, Phone } from 'lucide-react';
+import { Download, FileText, Search, Calendar, Globe, UtensilsCrossed, Package, Phone, LayoutGrid, List, Printer } from 'lucide-react';
 import moment from 'moment';
 import { exportOrdersToCSV, exportOrdersToPDF } from '@/lib/exportOrders';
 import { NORMALIZE_STATUS } from '@/components/orders/OrderKanban';
+import OrderDetailDialog from '@/components/orders/OrderDetailDialog';
+import PrintTrigger from '@/components/orders/PrintTrigger';
 
 const SOURCE_ICONS = {
   pos_dine_in: UtensilsCrossed,
@@ -45,6 +47,9 @@ export default function OrderHistory() {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [minAmount, setMinAmount] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // grid | list
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [printJob, setPrintJob] = useState(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['orders-history', user?.email],
@@ -124,7 +129,22 @@ export default function OrderHistory() {
             {filtered.length} sipariş · Toplam <span className="font-bold text-primary">€{totalRevenue.toFixed(2)}</span>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Görünüm modu */}
+          <div className="inline-flex rounded-xl border bg-card overflow-hidden">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1 ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" /> Kart
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1 ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}`}
+            >
+              <List className="h-3.5 w-3.5" /> Liste
+            </button>
+          </div>
           <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => exportOrdersToCSV(filtered)}>
             <Download className="h-3.5 w-3.5" /> CSV
           </Button>
@@ -231,20 +251,24 @@ export default function OrderHistory() {
         </CardContent>
       </Card>
 
-      {/* Card View */}
+      {/* View */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <Card><CardContent className="p-12 text-center text-muted-foreground">Sipariş bulunamadı.</CardContent></Card>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((o) => {
             const Icon = SOURCE_ICONS[o.order_source] || Package;
             const norm = NORMALIZE_STATUS(o.status);
             return (
-              <Card key={o.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={o.id}
+                onClick={() => setSelectedOrder(o)}
+                className="hover:shadow-md transition-shadow cursor-pointer"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -280,14 +304,94 @@ export default function OrderHistory() {
                     <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                       {o.order_source?.replace('_', ' ') || 'POS'}
                     </span>
-                    <span className="text-primary font-black">€{(o.total || 0).toFixed(2)}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPrintJob(o); }}
+                        className="p-1.5 rounded-lg hover:bg-secondary"
+                        title="Termal yazdır"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-primary font-black">€{(o.total || 0).toFixed(2)}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
+      ) : (
+        // LIST VIEW
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary/50 text-xs uppercase tracking-wide">
+                  <tr>
+                    <th className="text-left p-3 font-bold">Tarih</th>
+                    <th className="text-left p-3 font-bold">Masa/Müşteri</th>
+                    <th className="text-left p-3 font-bold hidden md:table-cell">Garson</th>
+                    <th className="text-left p-3 font-bold hidden md:table-cell">Kaynak</th>
+                    <th className="text-left p-3 font-bold">Durum</th>
+                    <th className="text-right p-3 font-bold">Tutar</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((o) => {
+                    const Icon = SOURCE_ICONS[o.order_source] || Package;
+                    const norm = NORMALIZE_STATUS(o.status);
+                    return (
+                      <tr
+                        key={o.id}
+                        onClick={() => setSelectedOrder(o)}
+                        className="border-t hover:bg-secondary/30 cursor-pointer"
+                      >
+                        <td className="p-3 text-xs whitespace-nowrap">{moment(o.created_date).format('DD.MM HH:mm')}</td>
+                        <td className="p-3 font-medium">
+                          {o.table_name || o.customer_name || 'Sipariş'}
+                          <span className="text-muted-foreground text-xs ml-1">#{String(o.id || '').slice(-5).toUpperCase()}</span>
+                        </td>
+                        <td className="p-3 text-xs hidden md:table-cell">{o.staff_name || '—'}</td>
+                        <td className="p-3 text-xs hidden md:table-cell">
+                          <span className="inline-flex items-center gap-1">
+                            <Icon className="w-3 h-3" />
+                            {(o.order_source || 'pos').replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[norm]}`}>
+                            {STATUS_LABELS[norm]}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-right font-black text-primary whitespace-nowrap">€{(o.total || 0).toFixed(2)}</td>
+                        <td className="p-3">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPrintJob(o); }}
+                            className="p-1.5 rounded-lg hover:bg-secondary"
+                            title="Termal yazdır"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      <OrderDetailDialog
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onPrint={(o) => { setSelectedOrder(null); setTimeout(() => setPrintJob(o), 100); }}
+      />
+
+      {printJob && <PrintTrigger order={printJob} onDone={() => setPrintJob(null)} />}
     </div>
   );
 }

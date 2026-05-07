@@ -166,5 +166,18 @@
       "type": "number",
       "default": 3
     }
-  }
+  },
+  "required": [
+    "tenant_id",
+    "selected_tenant_id",
+    "company_name",
+    "vat_number",
+    "address",
+    "phone",
+    "email_receipt",
+    "receipt_footer",
+    "receipt_footer_2",
+    "receipt_header_extra",
+    "receipt_logo_url"
+  ]
 }

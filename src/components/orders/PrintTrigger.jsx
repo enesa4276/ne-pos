@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { KitchenReceipt } from '@/components/pos/ReceiptPrint';
-import { useLang } from '@/lib/LanguageContext';
+import { CustomerReceipt } from '@/components/pos/ReceiptPrint';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 
-// Programatik yazdırma helper'ı: tek bir siparişi termal'a basar.
-// State'i set ettikten sonra window.print() çağırır, ardından temizler.
+// Programatik yazdırma helper'ı: Anlık sipariş ekranındaki "yazdır" butonuyla
+// kullanılır. Hesap → Termal Fiş'te tasarlanan müşteri fişini basar (tek tip).
 export default function PrintTrigger({ order, onDone }) {
-  const { t } = useLang();
+  const { data: user } = useCurrentUser();
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -14,10 +14,10 @@ export default function PrintTrigger({ order, onDone }) {
       try { window.print(); } catch (e) { console.warn(e); }
       setActive(false);
       onDone?.();
-    }, 100);
+    }, 200);
     return () => clearTimeout(timer);
   }, [active, order, onDone]);
 
   if (!active || !order) return null;
-  return <KitchenReceipt order={order} t={t} />;
+  return <CustomerReceipt order={order} companyInfo={user || {}} />;
 }

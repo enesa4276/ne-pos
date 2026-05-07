@@ -22,8 +22,8 @@ const SUPER_ADMIN_NAV = [
 
 export default function Layout() {
   const location = useLocation();
-  const { user } = useCurrentUser();
-  const isSuperAdmin = user?.role === 'admin';
+  const { data: user } = useCurrentUser();
+  const isSuperAdmin = user?.role === 'admin' || user?.is_super_admin === true;
   const inSuperArea = location.pathname.startsWith('/super-admin');
   const items = inSuperArea ? SUPER_ADMIN_NAV : NAV;
 

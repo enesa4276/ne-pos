@@ -1,190 +1,244 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Upload, Sparkles, Loader2, Check, X, ImageIcon } from 'lucide-react';
+import { Sparkles, Loader2, Check, ImageIcon, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import MenuImportUploader from '@/components/admin/menuImport/MenuImportUploader';
+import MenuImportItemEditor from '@/components/admin/menuImport/MenuImportItemEditor';
 
-// Görselden AI ile menü çıkarma. AI çağrısı `aiInvoke` backend fonksiyonu üzerinden
-// yapılır → süper admin'in tanımladığı dış API kullanılır (Base44 kredisi YOK).
+// Görselden AI ile menü çıkarma — çoklu görsel + ekstralar/varyantlar.
+// 1) Restoran menü fotoğrafları yükler
+// 2) AI vision (OpenAI/OpenRouter uyumlu) tüm ürünleri ve ekstraları çıkarır
+// 3) ONAY EKRANI: restoran her ürünü düzeltebilir, ekstra ekleyip silebilir
+// 4) "Menüyü Uygula" — Category/Product/ExtraGroup/Extra entity'lerine yazılır
 export default function MenuPhotoImport() {
-  const inputRef = useRef(null);
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState([]);   // [url]
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [extracted, setExtracted] = useState([]); // [{ name, price, category }]
+  const [items, setItems] = useState([]);     // [{ name, price, category, extras:[{name,price}], _selected }]
   const [importing, setImporting] = useState(false);
 
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories-for-import'],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  // ====== UPLOAD ======
+  async function addImages(files) {
+    if (!files.length) return;
     setUploading(true);
-    setExtracted([]);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setImageUrl(file_url);
-      toast.success('Görsel yüklendi. Şimdi "AI ile Tara"ya basın.');
+      const urls = [];
+      for (const file of files) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        urls.push(file_url);
+      }
+      setImages((prev) => [...prev, ...urls]);
+      toast.success(`${urls.length} fotoğraf yüklendi`);
     } catch (err) {
-      toast.error('Yükleme başarısız');
+      toast.error('Yükleme başarısız: ' + err.message);
     }
     setUploading(false);
-  };
+  }
 
-  const handleAnalyze = async () => {
-    if (!imageUrl) return;
+  function removeImage(idx) {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  // ====== AI ANALİZ ======
+  async function analyze() {
+    if (!images.length) return toast.error('Önce fotoğraf yükleyin');
     setAnalyzing(true);
     try {
-      const prompt = `Bu menü fotoğrafındaki tüm ürünleri çıkar. SADECE geçerli JSON döndür, başka hiçbir şey yazma.
-Format: {"items":[{"name":"...","price":0.00,"category":"..."}]}
-Fiyatları sayı olarak ver (€ işareti yok). Kategori yoksa "Diğer" yaz.
-Görsel URL: ${imageUrl}`;
+      // OpenAI/OpenRouter vision formatı: messages[].content array → [{type:"text"},{type:"image_url"}]
+      const userContent = [
+        {
+          type: 'text',
+          text:
+            'Bu menü fotoğraflarındaki TÜM ürünleri çıkar. SADECE geçerli JSON döndür, başka hiçbir açıklama yazma.\n' +
+            'Format: {"items":[{"name":"...","price":0.00,"category":"...","extras":[{"name":"Boy: Büyük","price":2.00}]}]}\n' +
+            '- Fiyatları sayı olarak ver (€ işareti yok).\n' +
+            '- Boy/porsiyon (örn. Küçük/Orta/Büyük) ve sos/ek malzeme seçeneklerini "extras" altına EKLE.\n' +
+            '- Ekstra fiyat farkları ana fiyatın üstüne eklenecek delta olarak yaz; ücretsiz ise 0.\n' +
+            '- Aynı ürün birden fazla boyda görünüyorsa: bir ürün + extras: [{Küçük, 0},{Orta, 1.5},{Büyük, 3}].\n' +
+            '- Kategori bilgisi yoksa "Diğer" yaz. Türkçe/Hollandaca/İngilizce/Fransızca menüleri destekle.',
+        },
+        ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
+      ];
 
       const res = await base44.functions.invoke('aiInvoke', {
         feature: 'menu_photo_import',
         messages: [
-          { role: 'system', content: 'You are a menu OCR assistant. Output strictly valid JSON.' },
-          { role: 'user', content: prompt },
+          { role: 'system', content: 'You are a precise menu OCR assistant. Output strictly valid JSON only.' },
+          { role: 'user', content: userContent },
         ],
       });
 
       const text = res?.data?.text || '';
-      // JSON'u ayıkla
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('AI yanıtı JSON içermiyor');
       const parsed = JSON.parse(match[0]);
-      const items = Array.isArray(parsed.items) ? parsed.items : [];
-      if (items.length === 0) throw new Error('Hiç ürün bulunamadı');
+      const arr = Array.isArray(parsed.items) ? parsed.items : [];
+      if (!arr.length) throw new Error('Hiç ürün bulunamadı');
 
-      setExtracted(items.map((i) => ({ ...i, _selected: true })));
-      toast.success(`${items.length} ürün bulundu. Onayladıktan sonra içe aktarın.`);
+      setItems(
+        arr.map((i) => ({
+          name: i.name || '',
+          price: parseFloat(i.price) || 0,
+          category: i.category || 'Diğer',
+          extras: Array.isArray(i.extras)
+            ? i.extras.map((e) => ({ name: e.name || '', price: parseFloat(e.price) || 0 }))
+            : [],
+          _selected: true,
+        }))
+      );
+      toast.success(`${arr.length} ürün bulundu — düzelt ve uygula`);
     } catch (err) {
       toast.error('Tarama hatası: ' + err.message);
     }
     setAnalyzing(false);
-  };
+  }
 
-  const toggleItem = (idx) => {
-    setExtracted((prev) => prev.map((it, i) => (i === idx ? { ...it, _selected: !it._selected } : it)));
-  };
-
-  const handleImport = async () => {
-    const selected = extracted.filter((i) => i._selected);
-    if (selected.length === 0) return toast.error('En az bir ürün seçin');
+  // ====== UYGULA ======
+  async function applyImport() {
+    const selected = items.filter((i) => i._selected !== false && i.name?.trim());
+    if (!selected.length) return toast.error('En az bir ürün seçin');
     setImporting(true);
     try {
-      // Mevcut kategorileri al, eksikleri oluştur
+      // 1) Kategorileri map'le, eksikleri yarat
       const allCats = await base44.entities.Category.list();
       const catMap = new Map(allCats.map((c) => [c.name.toLowerCase(), c.id]));
-      const newCatNames = [...new Set(selected.map((i) => i.category || 'Diğer'))]
+      const newCatNames = [...new Set(selected.map((i) => (i.category || 'Diğer').trim()))]
         .filter((n) => !catMap.has(n.toLowerCase()));
       for (const name of newCatNames) {
         const c = await base44.entities.Category.create({ name, sort_order: 0 });
         catMap.set(name.toLowerCase(), c.id);
       }
 
-      // Ürünleri ekle
-      await base44.entities.Product.bulkCreate(
-        selected.map((i) => ({
-          name: i.name,
-          base_price: parseFloat(i.price) || 0,
-          category_id: catMap.get((i.category || 'Diğer').toLowerCase()),
-        }))
-      );
+      // 2) Ürünleri tek tek oluştur — ekstrası olanlar için ExtraGroup + Extra zinciri kur
+      let created = 0;
+      for (const it of selected) {
+        const categoryId = catMap.get((it.category || 'Diğer').toLowerCase());
+        let extraGroupIds = [];
 
-      toast.success(`${selected.length} ürün eklendi 🎉`);
-      setExtracted([]);
-      setImageUrl('');
+        if (it.extras?.length) {
+          // Ürüne özel bir ExtraGroup
+          const grp = await base44.entities.ExtraGroup.create({
+            name: `${it.name} - Seçenekler`,
+            selection_type: 'multiple',
+          });
+          await Promise.all(
+            it.extras
+              .filter((e) => e.name?.trim())
+              .map((e) =>
+                base44.entities.Extra.create({
+                  name: e.name,
+                  price: parseFloat(e.price) || 0,
+                  group_id: grp.id,
+                })
+              )
+          );
+          extraGroupIds = [grp.id];
+        }
+
+        await base44.entities.Product.create({
+          name: it.name,
+          base_price: parseFloat(it.price) || 0,
+          category_id: categoryId,
+          extra_group_ids: extraGroupIds,
+        });
+        created++;
+      }
+
+      toast.success(`${created} ürün menüye eklendi 🎉`);
+      setItems([]);
+      setImages([]);
     } catch (err) {
       toast.error('İçe aktarma başarısız: ' + err.message);
     }
     setImporting(false);
-  };
+  }
 
+  // ====== UI ======
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="w-4 h-4 text-primary" /> Görselden Menü Oluştur
+          <Sparkles className="w-4 h-4 text-primary" /> Fotoğraftan Menü Oluştur
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-secondary/50 rounded-xl p-3 text-xs text-muted-foreground">
-          Menü fotoğrafınızı yükleyin, AI tüm ürünleri ve fiyatları otomatik çıkarsın.
-          Süper admin tarafından tanımlanan harici AI kullanılır — ek Base44 kredisi tüketilmez.
+        <div className="bg-secondary/50 rounded-xl p-3 text-xs text-muted-foreground space-y-1">
+          <p>📸 Birden fazla menü fotoğrafı yükleyin (sayfa sayfa).</p>
+          <p>🤖 AI tüm ürünleri, fiyatları ve <strong>boy/seçenek/ekstra</strong>ları çıkarır.</p>
+          <p>✏️ Onay ekranında düzeltir, eksikleri eklersiniz — sonra menü kayda alınır.</p>
         </div>
 
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+        {/* 1. Yükleyici */}
+        <MenuImportUploader
+          images={images}
+          onAdd={addImages}
+          onRemove={removeImage}
+          uploading={uploading}
+        />
 
-        {!imageUrl ? (
+        {/* 2. Analiz et */}
+        {images.length > 0 && (
           <Button
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="w-full h-32 rounded-2xl border-2 border-dashed bg-secondary/30 hover:bg-secondary/60"
-            variant="outline"
+            onClick={analyze}
+            disabled={analyzing}
+            className="w-full rounded-xl gap-2"
           >
-            {uploading ? (
-              <Loader2 className="w-6 h-6 animate-spin" />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <Upload className="w-6 h-6" />
-                <span className="text-sm">Menü fotoğrafı seç</span>
-              </div>
-            )}
+            {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {analyzing ? 'AI tarıyor…' : `AI ile ${images.length} Fotoğrafı Tara`}
           </Button>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex gap-3 items-start">
-              <img src={imageUrl} alt="Menü" className="w-32 h-32 object-cover rounded-xl border" />
-              <div className="flex-1 space-y-2">
-                <Button onClick={handleAnalyze} disabled={analyzing} className="w-full rounded-xl gap-2">
-                  {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {analyzing ? 'AI tarıyor…' : 'AI ile Tara'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full rounded-xl"
-                  onClick={() => { setImageUrl(''); setExtracted([]); }}
-                >
-                  <X className="w-3.5 h-3.5 mr-1" /> Görseli Kaldır
-                </Button>
-              </div>
-            </div>
-          </div>
         )}
 
-        {extracted.length > 0 && (
+        {/* 3. Onay & düzenleme */}
+        {items.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="text-sm font-bold flex items-center gap-1">
-                <ImageIcon className="w-4 h-4" /> Bulunan Ürünler ({extracted.filter((i) => i._selected).length}/{extracted.length})
+                <ImageIcon className="w-4 h-4" />
+                Bulunan Ürünler ({items.filter((i) => i._selected !== false).length}/{items.length})
               </p>
-              <Button onClick={handleImport} disabled={importing} size="sm" className="rounded-xl gap-1">
-                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                İçe Aktar
-              </Button>
-            </div>
-            <div className="space-y-1 max-h-80 overflow-y-auto">
-              {extracted.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => toggleItem(idx)}
-                  className={`flex items-center gap-2 p-2 rounded-xl cursor-pointer transition-colors ${
-                    item._selected ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/40'
-                  }`}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setItems((prev) => [...prev, { name: '', price: 0, category: 'Diğer', extras: [], _selected: true }])}
                 >
-                  <div
-                    className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                      item._selected ? 'bg-primary border-primary' : 'border-muted-foreground'
-                    }`}
-                  >
-                    {item._selected && <Check className="w-3 h-3 text-primary-foreground" />}
-                  </div>
-                  <span className="flex-1 text-sm font-medium">{item.name}</span>
-                  <Badge variant="outline" className="text-[10px]">{item.category || 'Diğer'}</Badge>
-                  <span className="text-sm font-bold text-primary">€{parseFloat(item.price || 0).toFixed(2)}</span>
-                </div>
+                  + Manuel Ekle
+                </Button>
+                <Button
+                  onClick={applyImport}
+                  disabled={importing}
+                  size="sm"
+                  className="rounded-xl gap-1"
+                >
+                  {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  Menüye Uygula
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2 flex gap-2 text-xs text-amber-700">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>AI hatalı çıkarmış olabilir — fiyatları ve ekstra fark fiyatlarını kontrol edip düzeltin.</span>
+            </div>
+
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+              {items.map((item, idx) => (
+                <MenuImportItemEditor
+                  key={idx}
+                  item={item}
+                  categories={categories}
+                  onChange={(next) => setItems((prev) => prev.map((it, i) => (i === idx ? next : it)))}
+                  onRemove={() => setItems((prev) => prev.filter((_, i) => i !== idx))}
+                />
               ))}
             </div>
           </div>
