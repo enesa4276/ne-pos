@@ -19,6 +19,14 @@ export const NORMAL_FEATURES = {
     icon: "📈",
     requires_setup: [],
   },
+  tablet_mode: {
+    name: "Tablet Sipariş Modu",
+    description: "Garsonların elinde tablet ile masada sipariş alması; her personele özel cihaz linki.",
+    teaser: "Garsonlar masadan kalkmadan sipariş alır, mutfağa anında düşer.",
+    price: "€19/ay",
+    icon: "📱",
+    requires_setup: [],
+  },
 };
 
 export const AI_TENANT_FEATURES = {

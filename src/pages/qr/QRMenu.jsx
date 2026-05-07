@@ -29,23 +29,38 @@ export default function QRMenu() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      // Public endpoint — base44 fonksiyonu doğrudan fetch ile çağırılır.
-      const appId = appParams.appId || '';
-      const baseUrl = appParams.appBaseUrl || '';
-      const url = `${baseUrl}/api/apps/${appId}/functions/getQRMenuData`;
-      console.log('QR menu fetching:', url, { tenant_id: tenantId, table_id: tableId });
+      // 1) Önce SDK üzerinden dene — yetkilendirme/cookie ile çalışır
+      let data = null;
+      let status = 0;
+      try {
+        const r = await base44.functions.invoke('getQRMenuData', {
+          tenant_id: tenantId,
+          table_id: tableId,
+        });
+        data = r?.data;
+        status = r?.status || 200;
+      } catch (sdkErr) {
+        console.warn('SDK invoke başarısız, public fetch denenecek:', sdkErr?.message);
+      }
 
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant_id: tenantId, table_id: tableId }),
-      });
-      const data = await r.json().catch(() => ({}));
-      console.log('QR menu response:', r.status, data);
+      // 2) SDK başarısız → public endpoint'e doğrudan fetch
+      if (!data || !data.tenant) {
+        const appId = appParams.appId || '';
+        const baseUrl = appParams.appBaseUrl || 'https://app.base44.com';
+        const url = `${baseUrl}/api/apps/${appId}/functions/getQRMenuData`;
+        console.log('QR menu fallback fetch:', url);
 
-      if (!r.ok || !data.tenant || !data.table) {
-        setErrorMsg(data.error || `Geçersiz QR kod (${r.status})`);
-        setLoading(false);
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant_id: tenantId, table_id: tableId }),
+        });
+        status = r.status;
+        data = await r.json().catch(() => ({}));
+      }
+
+      if (!data?.tenant || !data?.table) {
+        setErrorMsg(data?.error || `Menü yüklenemedi (${status})`);
         return;
       }
       setTenant(data.tenant);

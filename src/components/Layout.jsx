@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useTenant } from '@/lib/TenantContext';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -9,6 +10,7 @@ const NAV = [
   { to: '/pos',       label: 'POS',        icon: ShoppingCart },
   { to: '/orders',    label: 'Anlık',      icon: ClipboardList },
   { to: '/history',   label: 'Geçmiş',     icon: History },
+  { to: '/ai-phone',  label: 'AI Telefon', icon: Phone },
   { to: '/analytics', label: 'Analiz',     icon: BarChart3 },
   { to: '/admin',     label: 'Menü',       icon: Package },
   { to: '/account',   label: 'Ayarlar',    icon: Settings },
@@ -23,7 +25,9 @@ const SUPER_ADMIN_NAV = [
 export default function Layout() {
   const location = useLocation();
   const { data: user } = useCurrentUser();
+  const { hasFeature } = useTenant();
   const isSuperAdmin = user?.role === 'admin' || user?.is_super_admin === true;
+  const tabletEnabled = hasFeature?.('tablet_mode');
   const inSuperArea = location.pathname.startsWith('/super-admin');
   const items = inSuperArea ? SUPER_ADMIN_NAV : NAV;
 
@@ -68,13 +72,15 @@ export default function Layout() {
         </nav>
 
         <div className="p-3 border-t border-border space-y-1">
-          <Link
-            to="/tablet"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <TabletIcon className="h-3.5 w-3.5" />
-            Tablet Modu
-          </Link>
+          {(tabletEnabled || isSuperAdmin) && (
+            <Link
+              to="/tablet"
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <TabletIcon className="h-3.5 w-3.5" />
+              Tablet Modu
+            </Link>
+          )}
           {isSuperAdmin && !inSuperArea && (
             <Link
               to="/super-admin"

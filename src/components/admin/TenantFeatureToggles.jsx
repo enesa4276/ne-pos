@@ -11,23 +11,43 @@ import { Sparkles, Wrench, Info } from 'lucide-react';
 
 // Tenant'a açılacak özellikleri yönetir.
 // İki grup: Normal Özellikler (operasyonel) + AI Özellikleri.
+// Switch optimistic update — sayfa yenilemeden anında değişir, hata olursa geri alınır.
 export default function TenantFeatureToggles({ tenant, onSaved }) {
+  // Local state — switch'ler anında tepki verir, sayfa yenilenmez.
+  const [features, setFeatures] = useState(tenant.features_enabled || {});
+  const [limits, setLimits] = useState(tenant.feature_limits || {});
+
+  // Tenant prop değişirse (parent yeniden yüklerse) local state'i sync et.
+  useEffect(() => {
+    setFeatures(tenant.features_enabled || {});
+    setLimits(tenant.feature_limits || {});
+  }, [tenant.id]);
+
   async function toggleFeature(key, enabled) {
-    const updated = { ...(tenant.features_enabled || {}), [key]: enabled };
+    const previous = features;
+    const updated = { ...features, [key]: enabled };
+    setFeatures(updated); // anında UI güncelle
     try {
       await base44.entities.Tenant.update(tenant.id, { features_enabled: updated });
       toast.success(`${FEATURES[key].name}: ${enabled ? 'Aktif' : 'Pasif'}`);
-      onSaved?.();
-    } catch (e) { toast.error(e.message); }
+      // onSaved'ı çağırmıyoruz — parent reload sayfayı sıfırlardı.
+    } catch (e) {
+      setFeatures(previous); // geri al
+      toast.error(e.message || 'Güncelleme başarısız');
+    }
   }
 
   async function updateLimit(key, value) {
-    const updated = { ...(tenant.feature_limits || {}), [key]: parseInt(value) || 0 };
+    const previous = limits;
+    const updated = { ...limits, [key]: parseInt(value) || 0 };
+    setLimits(updated);
     try {
       await base44.entities.Tenant.update(tenant.id, { feature_limits: updated });
       toast.success('Limit güncellendi');
-      onSaved?.();
-    } catch (e) { toast.error(e.message); }
+    } catch (e) {
+      setLimits(previous);
+      toast.error(e.message);
+    }
   }
 
   return (
@@ -41,7 +61,7 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
         <p className="text-xs text-muted-foreground">
           Restoranın günlük işleyişine yönelik temel modüller.
         </p>
-        <FeatureGroup features={NORMAL_FEATURES} tenant={tenant} onToggle={toggleFeature} />
+        <FeatureGroup features={NORMAL_FEATURES} enabledMap={features} onToggle={toggleFeature} />
       </Card>
 
       {/* AI ÖZELLİKLERİ */}
@@ -54,7 +74,7 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
           Yapay zeka tabanlı özellikler. Her birinin global API atamasının yapılmış olması gerekir
           (<strong>Süper Admin → AI API Yönetimi</strong>).
         </p>
-        <FeatureGroup features={AI_TENANT_FEATURES} tenant={tenant} onToggle={toggleFeature} isAI />
+        <FeatureGroup features={AI_TENANT_FEATURES} enabledMap={features} onToggle={toggleFeature} isAI />
       </Card>
 
       {/* LİMİTLER */}
@@ -63,17 +83,17 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Limit
             label="Max Sipariş / Ay"
-            value={tenant.feature_limits?.max_orders_per_month ?? 500}
+            value={limits.max_orders_per_month ?? 500}
             onSave={(v) => updateLimit('max_orders_per_month', v)}
           />
           <Limit
             label="Max Kullanıcı"
-            value={tenant.feature_limits?.max_users ?? 5}
+            value={limits.max_users ?? 5}
             onSave={(v) => updateLimit('max_users', v)}
           />
           <Limit
             label="Max AI Arama / Ay"
-            value={tenant.feature_limits?.max_ai_calls_per_month ?? 100}
+            value={limits.max_ai_calls_per_month ?? 100}
             onSave={(v) => updateLimit('max_ai_calls_per_month', v)}
           />
         </div>
@@ -82,11 +102,11 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
   );
 }
 
-function FeatureGroup({ features, tenant, onToggle, isAI = false }) {
+function FeatureGroup({ features, enabledMap, onToggle, isAI = false }) {
   return (
     <div className="space-y-2">
       {Object.entries(features).map(([key, info]) => {
-        const enabled = !!tenant.features_enabled?.[key];
+        const enabled = !!enabledMap?.[key];
         return (
           <div key={key} className="flex items-start justify-between gap-3 p-3 bg-secondary/30 rounded-xl">
             <div className="min-w-0 flex-1">

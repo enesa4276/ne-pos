@@ -181,5 +181,18 @@
       "default": {},
       "description": "Sipari\u015f kayna\u011f\u0131na \u00f6zel ses URL'leri: { source_key: { url, name } }"
     }
-  }
+  },
+  "required": [
+    "tenant_id",
+    "selected_tenant_id",
+    "company_name",
+    "vat_number",
+    "address",
+    "phone",
+    "email_receipt",
+    "receipt_footer",
+    "receipt_footer_2",
+    "receipt_header_extra",
+    "receipt_logo_url"
+  ]
 }

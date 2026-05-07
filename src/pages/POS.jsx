@@ -263,15 +263,10 @@ export default function POS() {
         onPayLater={handlePayLater}
       />
 
-      {/* Print Templates (hidden) */}
-      {printMode === 'kitchen' && <KitchenReceipt order={currentOrder} t={t} />}
+      {/* Print Templates (hidden) — kullanıcının termal tasarımı ile basılır */}
+      {printMode === 'kitchen' && <KitchenReceipt order={currentOrder} companyInfo={user} />}
       {printMode === 'customer' && (
-        <CustomerReceipt
-          order={currentOrder}
-          total={paymentTotal}
-          t={t}
-          companyInfo={user}
-        />
+        <CustomerReceipt order={currentOrder} companyInfo={user} />
       )}
     </div>
   );
