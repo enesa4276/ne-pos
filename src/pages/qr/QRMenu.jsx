@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 import { Loader2, ShoppingCart, Plus, Minus, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,13 +29,22 @@ export default function QRMenu() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const res = await base44.functions.invoke('getQRMenuData', {
-        tenant_id: tenantId,
-        table_id: tableId,
+      // Public endpoint — base44 fonksiyonu doğrudan fetch ile çağırılır.
+      const appId = appParams.appId || '';
+      const baseUrl = appParams.appBaseUrl || '';
+      const url = `${baseUrl}/api/apps/${appId}/functions/getQRMenuData`;
+      console.log('QR menu fetching:', url, { tenant_id: tenantId, table_id: tableId });
+
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: tenantId, table_id: tableId }),
       });
-      const data = res?.data || {};
-      if (!data.tenant || !data.table) {
-        setErrorMsg(data.error || 'Geçersiz QR kod');
+      const data = await r.json().catch(() => ({}));
+      console.log('QR menu response:', r.status, data);
+
+      if (!r.ok || !data.tenant || !data.table) {
+        setErrorMsg(data.error || `Geçersiz QR kod (${r.status})`);
         setLoading(false);
         return;
       }
@@ -45,9 +55,10 @@ export default function QRMenu() {
       if ((data.categories || []).length) setActiveCat(data.categories[0].id);
     } catch (e) {
       console.error('QR menu load failed:', e);
-      setErrorMsg(e?.response?.data?.error || e.message || 'Menü yüklenemedi');
+      setErrorMsg(e?.message || 'Menü yüklenemedi');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const addToCart = (product) => {

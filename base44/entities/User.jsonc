@@ -165,19 +165,21 @@
     "max_tablets": {
       "type": "number",
       "default": 3
+    },
+    "notification_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Sesli sipari\u015f bildirimi a\u00e7\u0131k/kapal\u0131"
+    },
+    "notification_repeat": {
+      "type": "number",
+      "default": 15,
+      "description": "Bildirim tekrar s\u00fcresi (saniye)"
+    },
+    "notification_sounds": {
+      "type": "object",
+      "default": {},
+      "description": "Sipari\u015f kayna\u011f\u0131na \u00f6zel ses URL'leri: { source_key: { url, name } }"
     }
-  },
-  "required": [
-    "tenant_id",
-    "selected_tenant_id",
-    "company_name",
-    "vat_number",
-    "address",
-    "phone",
-    "email_receipt",
-    "receipt_footer",
-    "receipt_footer_2",
-    "receipt_header_extra",
-    "receipt_logo_url"
-  ]
+  }
 }

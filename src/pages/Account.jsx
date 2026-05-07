@@ -7,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Loader2, Tablet as TabletIcon, Users, QrCode } from 'lucide-react';
+import { Save, LogOut, Building2, Phone, Mail, MapPin, Receipt, Hash, Loader2, Tablet as TabletIcon, Users, QrCode, Bell } from 'lucide-react';
 import ReceiptPreview from '@/components/account/ReceiptPreview';
 import ReceiptDesigner from '@/components/account/ReceiptDesigner';
 import StaffManager from '@/components/account/StaffManager';
 import TableManager from '@/components/admin/TableManager';
 import QRCodeManager from '@/pages/admin/QRCodeManager';
 import StaffTabletDevices from '@/components/account/StaffTabletDevices';
+import NotificationSounds from '@/components/account/NotificationSounds';
 import { RECEIPT_DEFAULTS } from '@/components/account/receipt/receiptStyles';
 
 const DEFAULTS = {
@@ -85,6 +86,7 @@ export default function Account() {
           <TabsTrigger value="staff" className="rounded-lg gap-1.5"><Users className="h-3.5 w-3.5" />Personel</TabsTrigger>
           <TabsTrigger value="qr" className="rounded-lg gap-1.5"><QrCode className="h-3.5 w-3.5" />QR Menü</TabsTrigger>
           <TabsTrigger value="devices" className="rounded-lg gap-1.5"><TabletIcon className="h-3.5 w-3.5" />Cihazlar</TabsTrigger>
+          <TabsTrigger value="notifications" className="rounded-lg gap-1.5"><Bell className="h-3.5 w-3.5" />Bildirimler</TabsTrigger>
         </TabsList>
 
         {/* GENEL */}
@@ -157,6 +159,11 @@ export default function Account() {
         {/* CIHAZLAR — Her personele özel tablet linki */}
         <TabsContent value="devices" className="mt-4">
           <StaffTabletDevices />
+        </TabsContent>
+
+        {/* BİLDİRİMLER — Her sipariş kaynağı için özel ses */}
+        <TabsContent value="notifications" className="mt-4">
+          <NotificationSounds user={user} onChanged={() => window.location.reload()} />
         </TabsContent>
       </Tabs>
     </div>

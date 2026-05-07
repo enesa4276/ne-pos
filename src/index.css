@@ -88,6 +88,14 @@
   }
 }
 
+@keyframes pulse-slow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.45); }
+  50% { box-shadow: 0 0 0 12px rgba(249, 115, 22, 0); }
+}
+.animate-pulse-slow {
+  animation: pulse-slow 1.6s ease-out infinite;
+}
+
 /* Termal fiş yazdırma stilleri — ESC/POS uyumlu */
 @page {
   margin: 0;

@@ -9,6 +9,7 @@ const WIX_STATUS_MAP = {
   preparing: "ACCEPTED",
   ready: "READY",
   completed: "FULFILLED",
+  cancelled: "CANCELED",
 };
 
 const UBER_STATUS_MAP = {
@@ -16,6 +17,7 @@ const UBER_STATUS_MAP = {
   preparing: "preparing",
   ready: "ready_for_pickup",
   completed: "fulfilled",
+  cancelled: "cancelled",
 };
 
 const TAKEAWAY_STATUS_MAP = {
@@ -23,6 +25,7 @@ const TAKEAWAY_STATUS_MAP = {
   preparing: "ACCEPTED",
   ready: "READY",
   completed: "DELIVERED",
+  cancelled: "REJECTED",
 };
 
 async function pushToWix(order, status) {

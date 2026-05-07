@@ -5,12 +5,14 @@ import { FeatureGate } from '@/components/FeatureGate';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { Phone, Clock, DollarSign, Loader2, ChevronRight, PhoneCall } from 'lucide-react';
+import LiveCallChat from '@/components/aiphone/LiveCallChat';
+import moment from 'moment';
 
 export default function AIPhoneDashboard() {
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 md:p-6 max-w-5xl mx-auto pb-12">
+      <div className="p-4 md:p-6 max-w-6xl mx-auto pb-12">
         <FeatureGate feature="ai_phone">
           <DashboardContent />
         </FeatureGate>
@@ -25,13 +27,27 @@ function DashboardContent() {
   const [recentCalls, setRecentCalls] = useState([]);
   const [stats, setStats] = useState({ today: 0, total_cost: 0, avg_duration: 0 });
   const [loading, setLoading] = useState(true);
+  const [selectedCall, setSelectedCall] = useState(null);
 
   useEffect(() => {
     if (!tenant) return;
     loadCalls();
-    const interval = setInterval(loadCalls, 5000);
+    const interval = setInterval(loadCalls, 3000);
     return () => clearInterval(interval);
   }, [tenant]);
+
+  // Aktif arama otomatik seçilsin
+  useEffect(() => {
+    if (activeCalls.length && !selectedCall) {
+      setSelectedCall(activeCalls[0]);
+    }
+    // Seçili arama biterse seçimi temizle
+    if (selectedCall && !activeCalls.find((c) => c.id === selectedCall.id)) {
+      const stillExists = recentCalls.find((c) => c.id === selectedCall.id);
+      if (stillExists) setSelectedCall(stillExists);
+      else setSelectedCall(null);
+    }
+  }, [activeCalls, recentCalls, selectedCall]);
 
   async function loadCalls() {
     if (!tenant) return;
@@ -70,39 +86,79 @@ function DashboardContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">🤖 AI Telefon Asistanı</h1>
-        <p className="text-muted-foreground">Canlı aramalar ve geçmiş</p>
+        <h1 className="text-2xl font-bold flex items-center gap-2">📞 AI Telefon Asistanı</h1>
+        <p className="text-sm text-muted-foreground">Canlı aramalar gerçek zamanlı izlenir, istediğiniz an müdahale edebilirsiniz.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* İstatistikler */}
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         <StatCard icon={Phone} label="Bugün" value={stats.today} color="text-primary" />
         <StatCard icon={Clock} label="Ort. Süre" value={`${stats.avg_duration}s`} color="text-blue-500" />
         <StatCard icon={DollarSign} label="Toplam Maliyet" value={`€${stats.total_cost.toFixed(2)}`} color="text-green-500" />
       </div>
 
-      {activeCalls.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-            <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-            Canlı Aramalar ({activeCalls.length})
-          </h2>
-          <div className="space-y-3">
-            {activeCalls.map((c) => <ActiveCallCard key={c.id} call={c} />)}
+      {/* CANLI ALAN: solda liste, sağda chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
+        {/* Sol: arama listesi */}
+        <div className="space-y-3">
+          {activeCalls.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-red-600 mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                Canlı ({activeCalls.length})
+              </h2>
+              <div className="space-y-1.5">
+                {activeCalls.map((c) => (
+                  <CallListItem
+                    key={c.id} call={c}
+                    selected={selectedCall?.id === c.id}
+                    onClick={() => setSelectedCall(c)}
+                    isLive
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              Son Aramalar
+            </h2>
+            {recentCalls.length === 0 ? (
+              <Card className="p-4 text-center text-xs text-muted-foreground">Henüz arama yok.</Card>
+            ) : (
+              <div className="space-y-1.5">
+                {recentCalls.slice(0, 15).map((c) => (
+                  <CallListItem
+                    key={c.id} call={c}
+                    selected={selectedCall?.id === c.id}
+                    onClick={() => setSelectedCall(c)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      <div>
-        <h2 className="text-lg font-bold mb-3">Son Aramalar</h2>
-        {recentCalls.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">Henüz arama yok.</Card>
-        ) : (
-          <div className="space-y-2">
-            {recentCalls.map((c) => <RecentCallCard key={c.id} call={c} />)}
-          </div>
-        )}
+        {/* Sağ: chat */}
+        <div className="min-h-[400px]">
+          {selectedCall ? (
+            <LiveCallChat
+              key={selectedCall.id}
+              call={selectedCall}
+              tenant={tenant}
+              onClose={() => setSelectedCall(null)}
+            />
+          ) : (
+            <Card className="p-12 text-center text-muted-foreground h-full flex flex-col items-center justify-center">
+              <PhoneCall className="w-12 h-12 mx-auto opacity-30 mb-3" />
+              <p className="text-sm">Canlı aramalar burada görünür.</p>
+              <p className="text-xs mt-1">Bir arama seçin veya yeni arama bekleyin.</p>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -110,75 +166,47 @@ function DashboardContent() {
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
-        <Icon className={`w-8 h-8 ${color}`} />
-        <div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-sm text-muted-foreground">{label}</div>
+    <Card className="p-3">
+      <div className="flex items-center gap-2">
+        <Icon className={`w-5 h-5 ${color}`} />
+        <div className="min-w-0">
+          <div className="text-base md:text-xl font-bold truncate">{value}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
         </div>
       </div>
     </Card>
   );
 }
 
-function ActiveCallCard({ call }) {
-  return (
-    <Card className="p-4 border-red-500 border-2">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <div className="font-bold">{call.from_number}</div>
-          <div className="text-sm text-muted-foreground">
-            {new Date(call.created_date).toLocaleTimeString()}
-          </div>
-        </div>
-        <Badge className="bg-red-500/20 text-red-600 border-red-500/40 border">CANLI</Badge>
-      </div>
-      <ScrollArea className="h-48 bg-secondary/20 rounded-lg p-3">
-        {(call.transcript || []).map((msg, i) => (
-          <div key={i} className="mb-2">
-            <div className="text-xs font-medium">
-              {msg.speaker === 'customer' ? '👤 Müşteri' : '🤖 AI'}:
-            </div>
-            <div className="text-sm">{msg.text}</div>
-          </div>
-        ))}
-        {(call.transcript || []).length === 0 && (
-          <div className="text-xs text-muted-foreground italic">Görüşme başlıyor...</div>
-        )}
-      </ScrollArea>
-    </Card>
-  );
-}
-
-function RecentCallCard({ call }) {
+function CallListItem({ call, selected, onClick, isLive = false }) {
   const statusColors = {
-    completed: 'bg-green-500',
-    transferred_to_human: 'bg-yellow-500',
+    completed: 'bg-emerald-500',
+    transferred_to_human: 'bg-amber-500',
     failed: 'bg-red-500',
-    cancelled: 'bg-gray-500',
+    cancelled: 'bg-gray-400',
+    in_progress: 'bg-red-500',
+    ringing: 'bg-red-500',
   };
   return (
-    <Card className="p-3 hover:bg-secondary/20 cursor-pointer">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${statusColors[call.status] || 'bg-gray-500'}`} />
-          <div>
-            <div className="font-medium">{call.from_number}</div>
-            <div className="text-xs text-muted-foreground">
-              {new Date(call.created_date).toLocaleString()}
-            </div>
-          </div>
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-2.5 rounded-xl border transition-all ${
+        selected
+          ? 'bg-primary/10 border-primary/40'
+          : 'bg-card hover:bg-secondary/50 border-border'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full shrink-0 ${statusColors[call.status] || 'bg-gray-500'} ${isLive ? 'animate-pulse' : ''}`} />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{call.from_number}</p>
+          <p className="text-[10px] text-muted-foreground">
+            {moment(call.created_date).format('HH:mm')} · {call.duration_seconds ? `${call.duration_seconds}s` : '—'}
+          </p>
         </div>
-        <div className="text-right">
-          {call.order_id && (
-            <Badge variant="outline" className="text-xs">Sipariş #{String(call.order_id).slice(0, 8)}</Badge>
-          )}
-          {call.duration_seconds ? (
-            <div className="text-xs text-muted-foreground mt-1">{call.duration_seconds}s</div>
-          ) : null}
-        </div>
+        {call.order_id && <Badge variant="outline" className="text-[9px]">✓ Sipariş</Badge>}
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       </div>
-    </Card>
+    </button>
   );
 }

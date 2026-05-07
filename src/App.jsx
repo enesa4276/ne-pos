@@ -6,6 +6,8 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { LanguageProvider } from '@/lib/LanguageContext';
 import { TenantProvider } from '@/lib/TenantContext';
+import { OrderNotificationsProvider } from '@/lib/OrderNotifications';
+import OrderNotificationOverlay from '@/components/notifications/OrderNotificationOverlay';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from '@/components/Layout';
 import Tables from '@/pages/Tables';
@@ -90,10 +92,13 @@ function App() {
       <LanguageProvider>
         <QueryClientProvider client={queryClientInstance}>
           <TenantProvider>
-            <Router>
-              <AuthenticatedApp />
-            </Router>
-            <Toaster />
+            <OrderNotificationsProvider>
+              <Router>
+                <AuthenticatedApp />
+                <OrderNotificationOverlay />
+              </Router>
+              <Toaster />
+            </OrderNotificationsProvider>
           </TenantProvider>
         </QueryClientProvider>
       </LanguageProvider>
