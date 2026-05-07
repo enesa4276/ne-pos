@@ -1,0 +1,65 @@
+{
+  "name": "AIApiConfig",
+  "type": "object",
+  "description": "AI API konfig\u00fcrasyonlar\u0131 ve \u00f6zellik e\u015fle\u015ftirmeleri",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Bu konfig\u00fcrasyonun ait oldu\u011fu restoran (tenant). 'global' = t\u00fcm tenantlar i\u00e7in varsay\u0131lan"
+    },
+    "ai_feature": {
+      "type": "string",
+      "enum": [
+        "ai_phone_order",
+        "smart_menu_suggestion",
+        "eod_summary",
+        "transcription"
+      ],
+      "description": "Hangi AI \u00f6zelli\u011fi i\u00e7in bu konfig\u00fcrasyon yap\u0131ld\u0131"
+    },
+    "ai_provider": {
+      "type": "string",
+      "enum": [
+        "OpenAI",
+        "OpenRouter",
+        "Groq",
+        "Deepgram",
+        "Anthropic"
+      ],
+      "description": "Kullan\u0131lacak AI sa\u011flay\u0131c\u0131s\u0131"
+    },
+    "model_name": {
+      "type": "string",
+      "description": "Sa\u011flay\u0131c\u0131n\u0131n hangi modeli kullan\u0131lacak (\u00f6rn. gpt-4o-mini, llama3-8b-8192)"
+    },
+    "secret_name": {
+      "type": "string",
+      "description": "Base44 Dashboard'da tan\u0131mlanan API anahtar\u0131n\u0131n s\u0131r ad\u0131 (\u00f6rn. OPENAI_API_KEY)"
+    },
+    "temperature": {
+      "type": "number",
+      "default": 0.7,
+      "description": "Modelin yarat\u0131c\u0131l\u0131k seviyesi"
+    },
+    "max_tokens": {
+      "type": "number",
+      "default": 500,
+      "description": "Modelin \u00fcretece\u011fi maksimum token say\u0131s\u0131"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Bu konfig\u00fcrasyon aktif mi?"
+    },
+    "notes": {
+      "type": "string",
+      "description": "S\u00fcper admin notlar\u0131"
+    }
+  },
+  "required": [
+    "ai_feature",
+    "ai_provider",
+    "model_name",
+    "secret_name"
+  ]
+}

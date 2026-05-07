@@ -16,6 +16,7 @@ import Analytics from '@/pages/Analytics';
 import Account from '@/pages/Account';
 import AIPhoneDashboard from '@/pages/AIPhoneDashboard';
 import TenantManagement from '@/pages/admin/TenantManagement';
+import AIApiManagement from '@/pages/admin/AIApiManagement';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -49,6 +50,7 @@ const AuthenticatedApp = () => {
         <Route path="/orders" element={<Orders />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/tenants" element={<TenantManagement />} />
+        <Route path="/admin/ai-api" element={<AIApiManagement />} />
         <Route path="/ai-phone" element={<AIPhoneDashboard />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/account" element={<Account />} />
