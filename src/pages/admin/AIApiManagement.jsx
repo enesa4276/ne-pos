@@ -22,13 +22,23 @@ export default function AIApiManagement() {
 
   useEffect(() => {
     if (user?.role === 'admin' || user?.is_super_admin) loadAll();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   async function loadAll() {
     setLoading(true);
-    const c = await base44.entities.AIApiConfig.list('-created_date');
-    setProviders(c);
-    setLoading(false);
+    try {
+      const c = await base44.entities.AIApiConfig.list('-created_date');
+      setProviders(c || []);
+    } catch (e) {
+      if (String(e?.message || '').toLowerCase().includes('rate limit')) {
+        toast.error('Çok fazla istek — birkaç saniye sonra tekrar deneyin');
+      } else {
+        toast.error('Liste yüklenemedi: ' + (e?.message || ''));
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSave(form) {
@@ -36,14 +46,15 @@ export default function AIApiManagement() {
     try {
       const payload = { ...form, tenant_id: 'global' };
       if (editing) {
-        await base44.entities.AIApiConfig.update(editing.id, payload);
+        const updated = await base44.entities.AIApiConfig.update(editing.id, payload);
+        setProviders((prev) => prev.map((x) => (x.id === editing.id ? { ...x, ...updated, ...payload } : x)));
         toast.success('API güncellendi');
       } else {
-        await base44.entities.AIApiConfig.create(payload);
+        const created = await base44.entities.AIApiConfig.create(payload);
+        setProviders((prev) => [created, ...prev]);
         toast.success('API eklendi');
       }
       setShowForm(false); setEditing(null);
-      loadAll();
     } catch (e) {
       toast.error('Kaydetme başarısız: ' + e.message);
     }
@@ -52,14 +63,26 @@ export default function AIApiManagement() {
 
   async function handleDelete(p) {
     if (!confirm('Bu API sağlayıcı kaydı silinsin mi?')) return;
-    await base44.entities.AIApiConfig.delete(p.id);
-    toast.success('Silindi');
-    loadAll();
+    const prev = providers;
+    setProviders((list) => list.filter((x) => x.id !== p.id)); // optimistic
+    try {
+      await base44.entities.AIApiConfig.delete(p.id);
+      toast.success('Silindi');
+    } catch (e) {
+      setProviders(prev);
+      toast.error('Silinemedi: ' + e.message);
+    }
   }
 
   async function handleToggle(p, active) {
-    await base44.entities.AIApiConfig.update(p.id, { is_active: active });
-    loadAll();
+    const prev = providers;
+    setProviders((list) => list.map((x) => (x.id === p.id ? { ...x, is_active: active } : x))); // optimistic
+    try {
+      await base44.entities.AIApiConfig.update(p.id, { is_active: active });
+    } catch (e) {
+      setProviders(prev);
+      toast.error('Güncellenemedi: ' + e.message);
+    }
   }
 
   if (userLoading || loading) {
