@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, Loader2 } from 'lucide-react';
+import { Plus, Minus, Loader2, Banknote, CreditCard } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export default function QRCart({ open, onClose, cart, onUpdateQty, tenantId, tableId, tableName, onSubmitted }) {
   const [submitting, setSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // cash | card
   const total = cart.reduce((s, i) => s + i.subtotal, 0);
   const tax = total * 0.21;
   const grandTotal = total + tax;
@@ -24,10 +25,15 @@ export default function QRCart({ open, onClose, cart, onUpdateQty, tenantId, tab
         table_name: tableName,
         items: cart,
         total: grandTotal,
+        payment_method: paymentMethod,
         sent_to_kitchen: false,
-        notes: 'QR Sipariş — Müşteri tarafından gönderildi',
+        notes: `QR Sipariş — ${paymentMethod === 'card' ? 'Kart' : 'Nakit'} ödeme istendi`,
       });
-      toast.success('Siparişiniz alındı!');
+      toast.success(
+        paymentMethod === 'card'
+          ? 'Sipariş alındı! Garson kart cihazıyla gelecek.'
+          : 'Siparişiniz alındı!'
+      );
       onSubmitted?.();
     } catch (e) {
       toast.error('Sipariş gönderilemedi');
@@ -59,10 +65,39 @@ export default function QRCart({ open, onClose, cart, onUpdateQty, tenantId, tab
           ))}
         </div>
         {cart.length > 0 && (
-          <div className="border-t pt-3 space-y-2">
+          <div className="border-t pt-3 space-y-3">
             <div className="flex justify-between text-sm text-muted-foreground"><span>Ara toplam</span><span>€{total.toFixed(2)}</span></div>
             <div className="flex justify-between text-sm text-muted-foreground"><span>KDV (21%)</span><span>€{tax.toFixed(2)}</span></div>
             <div className="flex justify-between text-lg font-black"><span>Toplam</span><span className="text-primary">€{grandTotal.toFixed(2)}</span></div>
+
+            {/* Ödeme Yöntemi */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">Ödeme Yöntemi</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+                    paymentMethod === 'cash' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card'
+                  }`}
+                >
+                  <Banknote className="w-4 h-4" /> Nakit
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+                    paymentMethod === 'card' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4" /> Kart
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                {paymentMethod === 'card'
+                  ? 'Garson kart cihazıyla masanıza gelecek'
+                  : 'Garson tahsilat için masanıza gelecek'}
+              </p>
+            </div>
+
             <Button className="w-full h-12 rounded-2xl text-base" onClick={submitOrder} disabled={submitting}>
               {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Siparişi Onayla

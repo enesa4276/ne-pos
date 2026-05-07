@@ -1,13 +1,14 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, User, Shield, Tablet as TabletIcon, Package } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { cn } from '@/lib/utils';
 
 const NAV = [
   { to: '/',          label: 'Masalar',    icon: LayoutGrid },
   { to: '/pos',       label: 'POS',        icon: ShoppingCart },
-  { to: '/orders',    label: 'Siparişler', icon: ClipboardList },
+  { to: '/orders',    label: 'Anlık',      icon: ClipboardList },
+  { to: '/history',   label: 'Geçmiş',     icon: History },
   { to: '/analytics', label: 'Analiz',     icon: BarChart3 },
   { to: '/admin',     label: 'Menü',       icon: Package },
   { to: '/account',   label: 'Ayarlar',    icon: Settings },
@@ -100,10 +101,10 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur-xl border-t border-border z-40">
-        <div className="grid grid-cols-5">
-          {items.slice(0, 5).map((item) => {
+      {/* Mobile bottom nav — daha çok link sığabilmesi için yatay scroll */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur-xl border-t border-border z-40 overflow-x-auto">
+        <div className="flex min-w-full">
+          {items.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
             return (
@@ -111,7 +112,7 @@ export default function Layout() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 py-2 text-[10px]',
+                  'flex flex-col items-center gap-0.5 py-2 text-[10px] flex-1 min-w-[64px]',
                   active ? 'text-primary' : 'text-muted-foreground'
                 )}
               >

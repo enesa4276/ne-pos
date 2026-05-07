@@ -13,7 +13,8 @@
         "ai_phone_order",
         "smart_menu_suggestion",
         "eod_summary",
-        "transcription"
+        "transcription",
+        "menu_photo_import"
       ],
       "description": "Hangi AI \u00f6zelli\u011fi i\u00e7in bu konfig\u00fcrasyon yap\u0131ld\u0131"
     },
@@ -30,30 +31,36 @@
     },
     "model_name": {
       "type": "string",
-      "description": "Sa\u011flay\u0131c\u0131n\u0131n hangi modeli kullan\u0131lacak (\u00f6rn. gpt-4o-mini, llama3-8b-8192)"
+      "description": "Sa\u011flay\u0131c\u0131n\u0131n hangi modeli kullan\u0131lacak"
     },
     "secret_name": {
       "type": "string",
-      "description": "Base44 Dashboard'da tan\u0131mlanan API anahtar\u0131n\u0131n s\u0131r ad\u0131 (\u00f6rn. OPENAI_API_KEY)"
+      "description": "Base44 Dashboard'da tan\u0131mlanan API anahtar\u0131n\u0131n s\u0131r ad\u0131"
     },
     "temperature": {
       "type": "number",
-      "default": 0.7,
-      "description": "Modelin yarat\u0131c\u0131l\u0131k seviyesi"
+      "default": 0.7
     },
     "max_tokens": {
       "type": "number",
-      "default": 500,
-      "description": "Modelin \u00fcretece\u011fi maksimum token say\u0131s\u0131"
+      "default": 500
+    },
+    "monthly_budget_eur": {
+      "type": "number",
+      "default": 0,
+      "description": "Bu konfig\u00fcrasyon i\u00e7in ayl\u0131k b\u00fct\u00e7e limiti (EUR)"
+    },
+    "monthly_usage_eur": {
+      "type": "number",
+      "default": 0,
+      "description": "Bu ay t\u00fcketilen tahmini maliyet"
     },
     "is_active": {
       "type": "boolean",
-      "default": true,
-      "description": "Bu konfig\u00fcrasyon aktif mi?"
+      "default": true
     },
     "notes": {
-      "type": "string",
-      "description": "S\u00fcper admin notlar\u0131"
+      "type": "string"
     }
   },
   "required": [

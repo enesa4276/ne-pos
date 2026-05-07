@@ -12,6 +12,7 @@ import Tables from '@/pages/Tables';
 import POS from '@/pages/POS';
 import Tablet from '@/pages/Tablet';
 import Orders from '@/pages/Orders';
+import OrderHistory from '@/pages/OrderHistory';
 import Admin from '@/pages/Admin';
 import Analytics from '@/pages/Analytics';
 import Account from '@/pages/Account';
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Tables />} />
         <Route path="/pos" element={<POS />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/history" element={<OrderHistory />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/qr-codes" element={<QRCodeManager />} />
         <Route path="/ai-phone" element={<AIPhoneDashboard />} />

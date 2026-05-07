@@ -82,5 +82,16 @@
       "default": 3,
       "description": "Bu hesap i\u00e7in izin verilen tablet say\u0131s\u0131"
     }
-  }
+  },
+  "required": [
+    "tenant_id",
+    "selected_tenant_id",
+    "company_name",
+    "vat_number",
+    "address",
+    "phone",
+    "email_receipt",
+    "receipt_footer",
+    "receipt_logo_url"
+  ]
 }
