@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useTenant } from '@/lib/TenantContext';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,21 +15,18 @@ function qrUrl(text, size = 300) {
 
 export default function QRCodeManager() {
   const { tenant, loading: tenantLoading } = useTenant();
-  const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
   const printRef = useRef(null);
 
-  useEffect(() => {
-    if (tenant) loadTables();
-  }, [tenant]);
+  const tenantId = tenant?.tenant_id;
 
-  async function loadTables() {
-    setLoading(true);
-    const data = await base44.entities.RestaurantTable.filter({ tenant_id: tenant.tenant_id }, 'name');
-    setTables(data);
-    setLoading(false);
-  }
+  const { data: tables = [], isLoading: loading } = useQuery({
+    queryKey: ['qr-tables', tenantId],
+    queryFn: () => base44.entities.RestaurantTable.filter({ tenant_id: tenantId }, 'name'),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const buildLink = (tableId) => `${window.location.origin}/qr/${tenant?.tenant_id}/${tableId}`;
 
