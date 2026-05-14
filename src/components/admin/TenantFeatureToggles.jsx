@@ -4,50 +4,46 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { NORMAL_FEATURES, AI_TENANT_FEATURES, FEATURES } from '@/lib/features';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Sparkles, Wrench } from 'lucide-react';
+import { Sparkles, Wrench, Save, Loader2 } from 'lucide-react';
 
+// Özellikler sekmesi — toggle'lar draft state'te tutulur,
+// alttaki "Kaydet" butonuna basılınca tek seferde persist edilir.
 export default function TenantFeatureToggles({ tenant, onSaved }) {
   const [features, setFeatures] = useState(tenant.features_enabled || {});
   const [limits, setLimits] = useState(tenant.feature_limits || {});
+  const [saving, setSaving] = useState(false);
 
+  // Tenant prop değişince (üst bileşen yeniden yükledi) state'i senkronla
   useEffect(() => {
     setFeatures(tenant.features_enabled || {});
     setLimits(tenant.feature_limits || {});
   }, [tenant.id]);
 
-  async function persist(patch) {
-    await base44.entities.Tenant.update(tenant.id, patch);
+  function toggleFeature(key, enabled) {
+    setFeatures((prev) => ({ ...prev, [key]: enabled }));
   }
 
-  async function toggleFeature(key, enabled) {
-    const previous = features;
-    const updated = { ...features, [key]: enabled };
-    setFeatures(updated);
-    try {
-      await persist({ features_enabled: updated });
-      onSaved?.();
-      toast.success(`${FEATURES[key]?.name ?? key}: ${enabled ? 'Aktif' : 'Pasif'}`);
-    } catch (e) {
-      setFeatures(previous);
-      toast.error(e.message || 'Güncelleme başarısız');
-    }
+  function updateLimit(key, value) {
+    setLimits((prev) => ({ ...prev, [key]: parseInt(value) || 0 }));
   }
 
-  async function updateLimit(key, value) {
-    const previous = limits;
-    const updated = { ...limits, [key]: parseInt(value) || 0 };
-    setLimits(updated);
+  async function handleSave() {
+    setSaving(true);
     try {
-      await persist({ feature_limits: updated });
+      await base44.entities.Tenant.update(tenant.id, {
+        features_enabled: features,
+        feature_limits: limits,
+      });
+      toast.success('Özellikler kaydedildi');
       onSaved?.();
-      toast.success('Limit güncellendi');
     } catch (e) {
-      setLimits(previous);
-      toast.error(e.message || 'Güncelleme başarısız');
+      toast.error(e.message || 'Kaydetme başarısız');
     }
+    setSaving(false);
   }
 
   return (
@@ -73,11 +69,19 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
       <Card className="p-4 space-y-3">
         <h3 className="font-bold text-sm">Kullanım Limitleri</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Limit label="Max Sipariş / Ay" value={limits.max_orders_per_month ?? 500} onSave={(v) => updateLimit('max_orders_per_month', v)} />
-          <Limit label="Max Kullanıcı" value={limits.max_users ?? 5} onSave={(v) => updateLimit('max_users', v)} />
-          <Limit label="Max AI Arama / Ay" value={limits.max_ai_calls_per_month ?? 100} onSave={(v) => updateLimit('max_ai_calls_per_month', v)} />
+          <LimitField label="Max Sipariş / Ay" value={limits.max_orders_per_month ?? 500} onChange={(v) => updateLimit('max_orders_per_month', v)} />
+          <LimitField label="Max Kullanıcı" value={limits.max_users ?? 5} onChange={(v) => updateLimit('max_users', v)} />
+          <LimitField label="Max AI Arama / Ay" value={limits.max_ai_calls_per_month ?? 100} onChange={(v) => updateLimit('max_ai_calls_per_month', v)} />
         </div>
       </Card>
+
+      {/* Tek kaydet butonu */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="gap-2 rounded-xl px-6">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Kaydediliyor…' : 'Kaydet'}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -105,16 +109,19 @@ function FeatureGroup({ features, enabledMap, onToggle, isAI = false }) {
   );
 }
 
-function Limit({ label, value, onSave }) {
+// Limit input — sadece local state günceller, kayıt üstteki butonla olur
+function LimitField({ label, value, onChange }) {
   const [val, setVal] = useState(value);
   useEffect(() => setVal(value), [value]);
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="flex gap-2">
-        <Input type="number" value={val} onChange={(e) => setVal(e.target.value)} className="h-8 text-sm rounded-lg" />
-        <button onClick={() => onSave(val)} className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">Kaydet</button>
-      </div>
+      <Input
+        type="number"
+        value={val}
+        onChange={(e) => { setVal(e.target.value); onChange(e.target.value); }}
+        className="h-8 text-sm rounded-lg"
+      />
     </div>
   );
 }
