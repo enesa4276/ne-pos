@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { base44 } from '@/api/base44Client';
 import {
-  Building2, Sparkles, ShieldAlert, Loader2, ArrowRight,
-  Users, ShoppingBag, Euro, Phone, Activity,
+  Building2, ShieldAlert, Loader2, ArrowRight,
+  ShoppingBag, Euro, Phone, Activity,
 } from 'lucide-react';
 import moment from 'moment';
 
@@ -23,11 +23,10 @@ export default function SuperAdminDashboard() {
 
   async function loadStats() {
     try {
-      const [tenants, orders, calls, configs] = await Promise.all([
+      const [tenants, orders, calls] = await Promise.all([
         base44.entities.Tenant.list('-created_date').catch(() => []),
         base44.entities.Order.list('-created_date', 500).catch(() => []),
         base44.entities.PhoneCall.list('-created_date', 100).catch(() => []),
-        base44.entities.AIApiConfig.list().catch(() => []),
       ]);
 
       const last30 = moment().subtract(30, 'days');
@@ -43,7 +42,6 @@ export default function SuperAdminDashboard() {
         ordersLast30: ordersLast30.length,
         revenueLast30: revenue,
         callsTotal: calls.length,
-        activeApis: configs.filter((c) => c.is_active).length,
         recentTenants: tenants.slice(0, 5),
       });
     } catch (e) { console.error(e); }
@@ -72,14 +70,6 @@ export default function SuperAdminDashboard() {
       desc: 'Restoran hesaplarını, özelliklerini ve entegrasyonlarını yönetin.',
       iconColor: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
-    },
-    {
-      to: '/super-admin/ai-api',
-      icon: Sparkles,
-      title: 'AI API Yönetimi',
-      desc: 'API sağlayıcı havuzu ve AI özellik eşlemesi.',
-      iconColor: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
     },
   ];
 
@@ -112,7 +102,7 @@ export default function SuperAdminDashboard() {
             />
             <StatTile
               icon={Phone} label="AI Aramalar" value={stats.callsTotal}
-              sub={`${stats.activeApis} aktif API`} color="text-purple-500" bg="bg-purple-500/10"
+              sub="Tüm tenantlar" color="text-purple-500" bg="bg-purple-500/10"
             />
           </div>
         )}

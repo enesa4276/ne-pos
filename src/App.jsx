@@ -22,8 +22,8 @@ import AIPhoneDashboard from '@/pages/AIPhoneDashboard';
 import SuperAdminDashboard from '@/pages/super-admin/SuperAdminDashboard';
 import TenantManagement from '@/pages/admin/TenantManagement';
 import TenantDetail from '@/pages/admin/TenantDetail';
-import AIApiManagement from '@/pages/admin/AIApiManagement';
 import QRCodeManager from '@/pages/admin/QRCodeManager';
+import LiveCalls from '@/pages/LiveCalls';
 import QRMenu from '@/pages/qr/QRMenu';
 
 const AuthenticatedApp = () => {
@@ -66,7 +66,6 @@ const AuthenticatedApp = () => {
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/tenants" element={<TenantManagement />} />
         <Route path="/super-admin/tenants/:tenantId" element={<TenantDetail />} />
-        <Route path="/super-admin/ai-api" element={<AIApiManagement />} />
       </Route>
 
       {/* Tenant app */}
@@ -78,6 +77,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/qr-codes" element={<QRCodeManager />} />
         <Route path="/ai-phone" element={<AIPhoneDashboard />} />
+        <Route path="/live-calls" element={<LiveCalls />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/account" element={<Account />} />
       </Route>

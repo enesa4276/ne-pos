@@ -102,15 +102,17 @@ export const INTEGRATIONS = {
     webhookHint: "Uber Eats Developer Portal'da /functions/uberEatsWebhook adresini bildirin.",
   },
   ai_phone: {
-    name: "AI Telefon (Twilio)",
+    name: "AI Telefon (Harici Ses Sunucusu)",
     icon: "📞",
-    description: "Bu restorana özel Twilio telefon numarası — gelen aramaları AI yanıtlar.",
+    description: "AI telefon harici bir mikroservis tarafından yönetilir. Bu restorana özel numara, ses sunucusu URL'i ve dışa açık API anahtarı.",
     requires_feature: "ai_phone",
     fields: [
       { key: "twilio_phone_number", label: "Twilio Numarası", placeholder: "+32...", topLevel: true },
+      { key: "voice_server_url", label: "Harici Ses Sunucusu URL", placeholder: "https://voice.nepos.app" },
+      { key: "api_key", label: "Dış API Anahtarı (X-Api-Key)", placeholder: "Harici sunucuya verilecek gizli anahtar", type: "password" },
       { key: "fallback_phone", label: "İnsana Aktarım Numarası", placeholder: "+32... (AI başaramazsa)" },
       { key: "default_language", label: "Varsayılan Dil", placeholder: "nl-BE / fr-BE / tr-TR" },
     ],
-    webhookHint: "Twilio numarasının Voice Webhook URL'ini /functions/twilioVoiceWebhook olarak ayarlayın.",
+    webhookHint: "Harici sunucu Ne-POS'a şunları çağırır: GET /functions/restaurantMenuByPhone, POST /functions/restaurantOrder, POST /functions/callUpdate. Devralma için POST {voice_server_url}/api/voice/handoff kullanılır.",
   },
 };

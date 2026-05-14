@@ -39,28 +39,22 @@ export default function LiveCallChat({ call, tenant, onClose }) {
   const retryCount = data?.ai_retry_count || 0;
 
   async function takeover() {
-    const targetPhone = tenant?.settings?.fallback_phone || tenant?.phone;
-    if (!targetPhone) {
-      toast.error('Önce Ayarlar → Restoran Bilgileri\'nden telefon numarası ekleyin.');
-      return;
-    }
-    if (!confirm(`Arama ${targetPhone} numarasına aktarılacak. Devam edilsin mi?`)) return;
+    if (!confirm('Bu çağrıyı devralmak istiyor musunuz?')) return;
 
     setTaking(true);
     try {
-      const r = await base44.functions.invoke('twilioCallTakeover', {
+      const r = await base44.functions.invoke('callTakeoverExternal', {
         call_sid: data.call_sid,
-        target_phone: targetPhone,
-        reason: 'manual_takeover',
+        tenant_id: tenant?.tenant_id,
       });
       if (r.data?.ok) {
-        toast.success(`Arama ${targetPhone} numarasına aktarıldı`);
+        toast.success('Çağrı devralındı');
         onClose?.();
       } else {
-        toast.error(r.data?.error || 'Aktarım başarısız');
+        toast.error(r.data?.error || 'Devralma başarısız');
       }
     } catch (e) {
-      toast.error('Aktarım hatası: ' + e.message);
+      toast.error('Devralma hatası: ' + e.message);
     }
     setTaking(false);
   }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone, Radio } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useTenant } from '@/lib/TenantContext';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ const NAV = [
   { to: '/orders',    label: 'Anlık',      icon: ClipboardList },
   { to: '/history',   label: 'Geçmiş',     icon: History },
   { to: '/ai-phone',  label: 'AI Telefon', icon: Phone },
+  { to: '/live-calls', label: 'Canlı',     icon: Radio },
   { to: '/analytics', label: 'Analiz',     icon: BarChart3 },
   { to: '/admin',     label: 'Menü',       icon: Package },
   { to: '/account',   label: 'Ayarlar',    icon: Settings },
@@ -19,7 +20,6 @@ const NAV = [
 const SUPER_ADMIN_NAV = [
   { to: '/super-admin',         label: 'Süper Admin', icon: Shield },
   { to: '/super-admin/tenants', label: 'Restoranlar', icon: LayoutGrid },
-  { to: '/super-admin/ai-api',  label: 'AI API',      icon: Settings },
 ];
 
 export default function Layout() {

@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, AlertCircle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
+import StockAIChat from '@/components/admin/StockAIChat';
 
 export default function ProductManager() {
   const queryClient = useQueryClient();
@@ -105,6 +106,10 @@ export default function ProductManager() {
     }));
   };
 
+  const reactivate = (product) => {
+    update.mutate({ id: product.id, data: { is_active: true, out_of_stock_reason: null } });
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -113,18 +118,48 @@ export default function ProductManager() {
           <Plus className="h-4 w-4" /> Yeni Ürün
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        <StockAIChat products={products} />
+
         <div className="space-y-2">
           {products.map((product) => {
             const cat = categories.find(c => c.id === product.category_id);
+            const inactive = product.is_active === false;
             return (
-              <div key={product.id} className="flex items-center justify-between bg-secondary rounded-xl px-4 py-3">
-                <div>
-                  <span className="font-medium text-sm">{product.name}</span>
-                  <span className="ml-2 text-primary font-bold text-sm">€{product.base_price?.toFixed(2)}</span>
-                  {cat && <span className="ml-2 text-xs text-muted-foreground">{cat.name}</span>}
+              <div
+                key={product.id}
+                className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                  inactive
+                    ? 'bg-red-500/10 border border-red-500/40 opacity-80'
+                    : 'bg-secondary'
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-medium text-sm ${inactive ? 'line-through text-red-700 dark:text-red-400' : ''}`}>
+                      {product.name}
+                    </span>
+                    <span className="text-primary font-bold text-sm">€{product.base_price?.toFixed(2)}</span>
+                    {cat && <span className="text-xs text-muted-foreground">{cat.name}</span>}
+                    {inactive && (
+                      <span className="inline-flex items-center gap-1 text-[10px] bg-red-500/20 text-red-700 border border-red-500/40 px-1.5 py-0.5 rounded font-semibold">
+                        <AlertCircle className="w-3 h-3" />
+                        {product.out_of_stock_reason || 'Tükendi'}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
+                  {inactive && (
+                    <Button
+                      variant="outline" size="sm"
+                      className="h-8 rounded-xl gap-1 text-emerald-600 border-emerald-500/40"
+                      onClick={() => reactivate(product)}
+                      title="Tekrar aktif et"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> Aktif Et
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)}>
                     <Pencil className="h-4 w-4" />
                   </Button>

@@ -52,30 +52,11 @@ export default function MenuPhotoImport() {
     if (!images.length) return toast.error('Önce fotoğraf yükleyin');
     setAnalyzing(true);
     try {
-      // OpenAI/OpenRouter vision formatı: messages[].content array → [{type:"text"},{type:"image_url"}]
-      const userContent = [
-        {
-          type: 'text',
-          text:
-            'Bu menü fotoğraflarındaki TÜM ürünleri çıkar. SADECE geçerli JSON döndür, başka hiçbir açıklama yazma.\n' +
-            'Format: {"items":[{"name":"...","price":0.00,"category":"...","extras":[{"name":"Boy: Büyük","price":2.00}]}]}\n' +
-            '- Fiyatları sayı olarak ver (€ işareti yok).\n' +
-            '- Boy/porsiyon (örn. Küçük/Orta/Büyük) ve sos/ek malzeme seçeneklerini "extras" altına EKLE.\n' +
-            '- Ekstra fiyat farkları ana fiyatın üstüne eklenecek delta olarak yaz; ücretsiz ise 0.\n' +
-            '- Aynı ürün birden fazla boyda görünüyorsa: bir ürün + extras: [{Küçük, 0},{Orta, 1.5},{Büyük, 3}].\n' +
-            '- Kategori bilgisi yoksa "Diğer" yaz. Türkçe/Hollandaca/İngilizce/Fransızca menüleri destekle.',
-        },
-        ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
-      ];
-
-      const res = await base44.functions.invoke('aiInvoke', {
-        feature: 'menu_photo_import',
-        messages: [
-          { role: 'system', content: 'You are a precise menu OCR assistant. Output strictly valid JSON only.' },
-          { role: 'user', content: userContent },
-        ],
+      const res = await base44.functions.invoke('menuPhotoImport', {
+        image_urls: images,
       });
 
+      if (res?.data?.error) throw new Error(res.data.error);
       const text = res?.data?.text || '';
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('AI yanıtı JSON içermiyor');

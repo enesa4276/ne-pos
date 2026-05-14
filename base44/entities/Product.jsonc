@@ -28,6 +28,15 @@
         "type": "string"
       },
       "description": "List of ExtraGroup IDs attached to this product"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "\u00dcr\u00fcn sat\u0131\u015fa a\u00e7\u0131k m\u0131"
+    },
+    "out_of_stock_reason": {
+      "type": "string",
+      "description": "\u00dcr\u00fcn pasifse t\u00fckenme/durdurma nedeni"
     }
   },
   "required": [
