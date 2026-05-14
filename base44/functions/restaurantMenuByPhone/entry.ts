@@ -33,13 +33,13 @@ Deno.serve(async (req) => {
     const tenants = await svc.entities.Tenant.filter({ twilio_phone_number: phoneNumber });
     const tenant = tenants[0];
     if (!tenant) {
-      return Response.json({ error: "Bu numaraya bağlı restoran bulunamadı" }, { status: 404 });
+      return Response.json({ error: "Restaurant not found" }, { status: 404 });
     }
 
     // API key kontrolü
     const expectedKey = tenant.settings?.api_key;
     if (!expectedKey || apiKey !== expectedKey) {
-      return Response.json({ error: "Invalid API key" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Menü verisini topla (tenant'a ait kayıtlar)
@@ -55,17 +55,19 @@ Deno.serve(async (req) => {
     const extrasByGroup = {};
     for (const e of extras) {
       if (!extrasByGroup[e.group_id]) extrasByGroup[e.group_id] = [];
-      extrasByGroup[e.group_id].push({ name: e.name, price: e.price || 0 });
+      extrasByGroup[e.group_id].push({ id: e.id, name: e.name, price: Number(e.price || 0) });
     }
 
     const productsOut = products.map((p) => ({
       id: p.id,
       name: p.name,
       price: Number(p.base_price || 0),
-      category: catMap[p.category_id] || null,
+      category_id: p.category_id || null,
+      category_name: catMap[p.category_id] || null,
       is_active: p.is_active !== false,
       out_of_stock_reason: p.out_of_stock_reason || null,
       extras: (p.extra_group_ids || []).map((gid) => ({
+        group_id: gid,
         group_name: groupMap[gid]?.name || '',
         selection_type: groupMap[gid]?.selection_type || 'multiple',
         options: extrasByGroup[gid] || [],
@@ -75,6 +77,8 @@ Deno.serve(async (req) => {
     return Response.json({
       tenant_id: tenant.tenant_id,
       restaurant_name: tenant.company_name,
+      fallback_phone: tenant.settings?.fallback_phone || null,
+      default_language: tenant.settings?.default_language || 'nl',
       categories: categories.map((c) => ({ id: c.id, name: c.name, sort_order: c.sort_order || 0 })),
       products: productsOut,
     });

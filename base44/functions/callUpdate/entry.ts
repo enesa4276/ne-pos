@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
       const tenants = await svc.entities.Tenant.filter({ tenant_id });
       tenant = tenants[0];
     }
-    if (!tenant) return Response.json({ error: "Tenant bulunamadı" }, { status: 404 });
+    if (!tenant) return Response.json({ error: "Restaurant not found" }, { status: 404 });
     const expectedKey = tenant.settings?.api_key;
     if (!expectedKey || apiKey !== expectedKey) {
-      return Response.json({ error: "Invalid API key" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // PhoneCall var mı? — yoksa oluştur (status="ringing" gibi ilk update için).
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ ok: true, id: result.id });
+    return Response.json({ success: true, id: result.id });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }

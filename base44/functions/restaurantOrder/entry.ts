@@ -9,7 +9,11 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const apiKey = req.headers.get("x-api-key") || body.api_key;
-    const { tenant_id, call_sid, customer_phone, customer_name, items, total, notes } = body;
+    const {
+      tenant_id, call_sid,
+      customer_phone, customer_name, delivery_address,
+      items, total, notes,
+    } = body;
 
     if (!tenant_id || !Array.isArray(items)) {
       return Response.json({ error: "tenant_id and items required" }, { status: 400 });
@@ -21,10 +25,10 @@ Deno.serve(async (req) => {
     // API key kontrolü
     const tenants = await svc.entities.Tenant.filter({ tenant_id });
     const tenant = tenants[0];
-    if (!tenant) return Response.json({ error: "Tenant bulunamadı" }, { status: 404 });
+    if (!tenant) return Response.json({ error: "Restaurant not found" }, { status: 404 });
     const expectedKey = tenant.settings?.api_key;
     if (!expectedKey || apiKey !== expectedKey) {
-      return Response.json({ error: "Invalid API key" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Sipariş oluştur
@@ -37,6 +41,7 @@ Deno.serve(async (req) => {
       total: Number(total || 0),
       customer_phone: customer_phone || "",
       customer_name: customer_name || "",
+      delivery_address: delivery_address || "",
       notes: notes || "",
     });
 
@@ -48,7 +53,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ ok: true, order_id: order.id });
+    return Response.json({ success: true, order_id: order.id });
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });
   }
