@@ -31,8 +31,8 @@ export default function TenantDetail() {
   // Kayıt sonrası hem bu sayfanın hem TenantContext'in cache'ini sıfırla
   function handleSaved() {
     queryClient.invalidateQueries({ queryKey: ['admin-tenant', tenantId] });
-    // TenantContext tenant_id'ye göre cache'liyor — tüm tenant sorgularını temizle
-    queryClient.invalidateQueries({ queryKey: ['tenant'] });
+    // TenantContext tüm ['tenant', *] sorgularını temizle (impersonate dahil)
+    queryClient.invalidateQueries({ queryKey: ['tenant'], exact: false });
   }
 
   async function impersonate() {

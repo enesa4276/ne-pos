@@ -21,7 +21,7 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
   useEffect(() => {
     setFeatures(tenant.features_enabled || {});
     setLimits(tenant.feature_limits || {});
-  }, [tenant.id]);
+  }, [tenant.features_enabled, tenant.feature_limits]);
 
   function toggleFeature(key, enabled) {
     setFeatures((prev) => ({ ...prev, [key]: enabled }));
