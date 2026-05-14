@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -14,35 +15,35 @@ import TenantFeatureToggles from '@/components/admin/TenantFeatureToggles';
 import TenantIntegrations from '@/components/admin/TenantIntegrations';
 import TenantStats from '@/components/admin/TenantStats';
 
-// Tek bir restoran (tenant) için tüm yönetim alanı.
-// Sekmeler: İstatistik · Genel · Özellikler · Entegrasyonlar
 export default function TenantDetail() {
   const { tenantId } = useParams();
   const navigate = useNavigate();
   const { data: user, isLoading: userLoading } = useCurrentUser();
-  const [tenant, setTenant] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tenantId]);
+  const { data: tenant, isLoading: tenantLoading } = useQuery({
+    queryKey: ['admin-tenant', tenantId],
+    queryFn: () => base44.entities.Tenant.get(tenantId),
+    enabled: !!tenantId,
+    staleTime: 0, // Her zaman taze veri iste
+  });
 
-  async function load() {
-    setLoading(true);
-    try {
-      const t = await base44.entities.Tenant.get(tenantId);
-      setTenant(t);
-    } catch (e) {
-      toast.error('Tenant yüklenemedi');
-    }
-    setLoading(false);
+  // Kayıt sonrası hem bu sayfanın hem TenantContext'in cache'ini sıfırla
+  function handleSaved() {
+    queryClient.invalidateQueries({ queryKey: ['admin-tenant', tenantId] });
+    // TenantContext tenant_id'ye göre cache'liyor — tüm tenant sorgularını temizle
+    queryClient.invalidateQueries({ queryKey: ['tenant'] });
   }
 
   async function impersonate() {
     await base44.auth.updateMe({ selected_tenant_id: tenant.tenant_id });
     toast.success(`${tenant.company_name} olarak giriliyor…`);
+    // currentUser cache'ini de temizle ki TenantContext yeni selected_tenant_id'yi okusun
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     setTimeout(() => { window.location.href = '/'; }, 400);
   }
 
-  if (userLoading || loading) {
+  if (userLoading || tenantLoading) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
@@ -62,7 +63,6 @@ export default function TenantDetail() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 pb-12">
-        {/* Üst bar */}
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="ghost" size="sm" onClick={() => navigate('/super-admin/tenants')} className="gap-1 rounded-xl">
             <ArrowLeft className="w-4 h-4" /> Tüm Tenantlar
@@ -104,13 +104,13 @@ export default function TenantDetail() {
             <TenantStats tenant={tenant} />
           </TabsContent>
           <TabsContent value="general">
-            <TenantGeneralForm tenant={tenant} onSaved={load} onDeleted={() => navigate('/super-admin/tenants')} />
+            <TenantGeneralForm tenant={tenant} onSaved={handleSaved} onDeleted={() => navigate('/super-admin/tenants')} />
           </TabsContent>
           <TabsContent value="features">
-            <TenantFeatureToggles tenant={tenant} onSaved={load} />
+            <TenantFeatureToggles tenant={tenant} onSaved={handleSaved} />
           </TabsContent>
           <TabsContent value="integrations">
-            <TenantIntegrations tenant={tenant} onSaved={load} />
+            <TenantIntegrations tenant={tenant} onSaved={handleSaved} />
           </TabsContent>
         </Tabs>
       </div>

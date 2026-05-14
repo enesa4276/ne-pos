@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useLocation } from 'react-router-dom';
 
 // Global sipariş bildirim sistemi.
 // - Her 5 saniyede yeni siparişleri kontrol eder.
@@ -28,10 +29,14 @@ function playBeep() {
 
 export function OrderNotificationsProvider({ children }) {
   const { data: user } = useCurrentUser();
+  const location = useLocation();
   const [pendingOrders, setPendingOrders] = useState([]);
   const seenIdsRef = useRef(new Set());
   const repeatTimersRef = useRef(new Map()); // orderId -> timer
   const initializedRef = useRef(false);
+
+  // Super-admin alanında polling yapma — gereksiz rate-limit baskısı yaratır
+  const isSuperAdminArea = location.pathname.startsWith('/super-admin');
 
   const settings = {
     enabled: user?.notification_enabled ?? true,
@@ -68,9 +73,10 @@ export function OrderNotificationsProvider({ children }) {
     }
   }, []);
 
-  // Polling
+  // Polling — super-admin alanında devre dışı, 30sn interval
   useEffect(() => {
     if (!user?.email) return;
+    if (isSuperAdminArea) return; // super-admin sayfalarında poll etme
     let cancelled = false;
 
     async function poll() {
@@ -114,9 +120,9 @@ export function OrderNotificationsProvider({ children }) {
     }
 
     poll();
-    const t = setInterval(poll, 5000);
+    const t = setInterval(poll, 30_000); // 5sn → 30sn, rate-limit baskısını azalt
     return () => { cancelled = true; clearInterval(t); };
-  }, [user?.email, playSourceSound, startRepeating, stopRepeating]);
+  }, [user?.email, isSuperAdminArea, playSourceSound, startRepeating, stopRepeating]);
 
   // Cleanup tüm timer'lar
   useEffect(() => () => {
