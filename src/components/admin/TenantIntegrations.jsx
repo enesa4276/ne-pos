@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { INTEGRATIONS, FEATURES } from '@/lib/features';
 import { Save, Info, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import AIPhoneIntegrationCard from '@/components/admin/AIPhoneIntegrationCard';
 
 // Restoran (tenant) için 3. parti entegrasyonların ayar paneli.
 // Settings JSON içine yazar (wix_site_id, takeaway_store_id, vs.)
@@ -53,7 +54,10 @@ export default function TenantIntegrations({ tenant, onSaved }) {
 
   return (
     <div className="space-y-3">
-      {Object.entries(INTEGRATIONS).map(([key, def]) => {
+      {/* AI Telefon Entegrasyonu — özel kart (API key üretici + show/hide) */}
+      <AIPhoneIntegrationCard tenant={tenant} onSaved={onSaved} />
+
+      {Object.entries(INTEGRATIONS).filter(([key]) => key !== 'ai_phone').map(([key, def]) => {
         const requiresFeature = def.requires_feature;
         const featureEnabled = !requiresFeature || tenant.features_enabled?.[requiresFeature];
 
