@@ -20,6 +20,7 @@ import Analytics from '@/pages/Analytics';
 import Account from '@/pages/Account';
 import AIPhoneDashboard from '@/pages/AIPhoneDashboard';
 import SuperAdminDashboard from '@/pages/super-admin/SuperAdminDashboard';
+import SystemSettings from '@/pages/super-admin/SystemSettings';
 import TenantManagement from '@/pages/admin/TenantManagement';
 import TenantDetail from '@/pages/admin/TenantDetail';
 import QRCodeManager from '@/pages/admin/QRCodeManager';
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/tenants" element={<TenantManagement />} />
         <Route path="/super-admin/tenants/:tenantId" element={<TenantDetail />} />
+        <Route path="/super-admin/system-settings" element={<SystemSettings />} />
       </Route>
 
       {/* Tenant app */}

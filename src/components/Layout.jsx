@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone, Radio } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone, Radio, Settings2 } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useTenant } from '@/lib/TenantContext';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,9 @@ const NAV = [
 ];
 
 const SUPER_ADMIN_NAV = [
-  { to: '/super-admin',         label: 'Süper Admin', icon: Shield },
-  { to: '/super-admin/tenants', label: 'Restoranlar', icon: LayoutGrid },
+  { to: '/super-admin',                 label: 'Süper Admin',   icon: Shield },
+  { to: '/super-admin/tenants',         label: 'Restoranlar',   icon: LayoutGrid },
+  { to: '/super-admin/system-settings', label: 'Sistem Ayarları', icon: Settings2 },
 ];
 
 export default function Layout() {
