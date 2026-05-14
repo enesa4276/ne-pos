@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { useLocation } from 'react-router-dom';
 
 // Global sipariş bildirim sistemi.
 // - Her 5 saniyede yeni siparişleri kontrol eder.
@@ -29,14 +28,13 @@ function playBeep() {
 
 export function OrderNotificationsProvider({ children }) {
   const { data: user } = useCurrentUser();
-  const location = useLocation();
   const [pendingOrders, setPendingOrders] = useState([]);
   const seenIdsRef = useRef(new Set());
   const repeatTimersRef = useRef(new Map()); // orderId -> timer
   const initializedRef = useRef(false);
 
   // Super-admin alanında polling yapma — gereksiz rate-limit baskısı yaratır
-  const isSuperAdminArea = location.pathname.startsWith('/super-admin');
+  const isSuperAdminArea = window.location.pathname.startsWith('/super-admin');
 
   const settings = {
     enabled: user?.notification_enabled ?? true,
