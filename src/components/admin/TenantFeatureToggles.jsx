@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,15 @@ export default function TenantFeatureToggles({ tenant, onSaved }) {
   const [limits, setLimits] = useState(tenant.feature_limits || {});
   const [saving, setSaving] = useState(false);
 
-  // Tenant prop değişince (üst bileşen yeniden yükledi) state'i senkronla
+  // Sadece farklı bir tenant yüklendiğinde state'i sıfırla (aynı tenant'ın refreshi state'i ezmez)
+  const prevTenantIdRef = useRef(tenant.id);
   useEffect(() => {
-    setFeatures(tenant.features_enabled || {});
-    setLimits(tenant.feature_limits || {});
-  }, [tenant.features_enabled, tenant.feature_limits]);
+    if (prevTenantIdRef.current !== tenant.id) {
+      prevTenantIdRef.current = tenant.id;
+      setFeatures(tenant.features_enabled || {});
+      setLimits(tenant.feature_limits || {});
+    }
+  }, [tenant.id]);
 
   function toggleFeature(key, enabled) {
     setFeatures((prev) => ({ ...prev, [key]: enabled }));
