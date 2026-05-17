@@ -7,8 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Settings2, Eye, EyeOff, Save, Loader2, Lock, Info } from 'lucide-react';
+import { Settings2, Eye, EyeOff, Save, Loader2, Lock, Info, Copy, Check, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+
+// Base44 app'inin function base URL'i
+const APP_FUNCTIONS_BASE_URL = `${window.location.origin.replace(/\/$/, '')}`;
+const ENDPOINTS = [
+  { name: 'getRestaurantMenu', method: 'GET', path: '/functions/restaurantMenuByPhone?phone={phone}' },
+  { name: 'createPhoneOrder', method: 'POST', path: '/functions/createPhoneOrder' },
+  { name: 'createPhoneCall', method: 'POST', path: '/functions/createPhoneCall' },
+  { name: 'updatePhoneCall', method: 'POST', path: '/functions/updatePhoneCall' },
+  { name: 'stockUpdateByAI', method: 'POST', path: '/functions/stockUpdateByAI' },
+];
 
 // Süper admin global sistem ayarları sayfası.
 // SystemConfig kayıtlarını listeler, value alanını düzenlenebilir yapar.
@@ -74,17 +84,81 @@ export default function SystemSettings() {
           </div>
         )}
 
+        {/* API Public URL kartı */}
+        <ApiUrlCard />
+
         {/* Alt bilgi notu */}
         <div className="text-[11px] bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 flex gap-2 text-blue-700">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>
+            <code className="font-mono bg-blue-500/10 px-1 rounded">nepos_api_key</code>{' '}
+            değerini SystemConfig'den kopyalayın ve Render'a{' '}
             <code className="font-mono bg-blue-500/10 px-1 rounded">NEPOS_API_KEY</code>{' '}
-            değerini mikroservisin <code className="font-mono bg-blue-500/10 px-1 rounded">.env</code>{' '}
-            dosyasına kopyalayın.
+            olarak ekleyin.
           </span>
         </div>
       </div>
     </ScrollArea>
+  );
+}
+
+function ApiUrlCard() {
+  const [copied, setCopied] = useState(null);
+
+  function copyToClipboard(text, key) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  }
+
+  const baseUrl = APP_FUNCTIONS_BASE_URL;
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Globe className="w-4 h-4 text-primary" />
+        <h3 className="font-semibold text-sm">API Public URL</h3>
+        <Badge variant="secondary" className="text-[10px]">Render Env</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Render'da <code className="font-mono bg-muted px-1 rounded">NEPOS_API_BASE_URL</code> değişkenine aşağıdaki URL'i girin.
+      </p>
+
+      {/* Base URL */}
+      <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+        <code className="text-xs flex-1 truncate font-mono text-foreground">{baseUrl}</code>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 shrink-0"
+          onClick={() => copyToClipboard(baseUrl, 'base')}
+        >
+          {copied === 'base' ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+        </Button>
+      </div>
+
+      {/* Endpoint listesi */}
+      <div className="space-y-1">
+        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Endpoint'ler</p>
+        {ENDPOINTS.map((ep) => (
+          <div key={ep.name} className="flex items-center gap-2 text-xs py-1 border-b border-border/50 last:border-0">
+            <Badge variant="outline" className={`text-[10px] shrink-0 ${ep.method === 'GET' ? 'text-blue-600 border-blue-300' : 'text-green-600 border-green-300'}`}>
+              {ep.method}
+            </Badge>
+            <code className="font-mono text-muted-foreground flex-1 truncate">{ep.path}</code>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-1.5 shrink-0"
+              onClick={() => copyToClipboard(baseUrl + ep.path, ep.name)}
+            >
+              {copied === ep.name ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            </Button>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
