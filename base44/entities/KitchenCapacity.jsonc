@@ -1,0 +1,38 @@
+{
+  "name": "KitchenCapacity",
+  "type": "object",
+  "description": "Mutfak kapasite y\u00f6netimi",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "max_concurrent_orders": {
+      "type": "number",
+      "default": 8
+    },
+    "current_active_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "average_prep_time_minutes": {
+      "type": "number",
+      "default": 20
+    },
+    "current_estimated_wait_minutes": {
+      "type": "number",
+      "default": 0
+    },
+    "is_busy": {
+      "type": "boolean",
+      "default": false,
+      "description": "true if current_active >= max * 0.85"
+    },
+    "last_capacity_warning_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id"
+  ]
+}

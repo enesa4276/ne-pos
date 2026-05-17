@@ -1,0 +1,68 @@
+{
+  "name": "OrderForecast",
+  "type": "object",
+  "description": "AI tabanl\u0131 sipari\u015f tahmini",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "forecast_date": {
+      "type": "string",
+      "description": "YYYY-MM-DD"
+    },
+    "predicted_orders": {
+      "type": "number"
+    },
+    "predicted_revenue": {
+      "type": "number"
+    },
+    "predicted_busiest_hours": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "hour": {
+            "type": "number"
+          },
+          "expected_orders": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "ingredient_prep_list": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ingredient_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recommended_staff_count": {
+      "type": "number"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "0-100"
+    },
+    "based_on_days": {
+      "type": "number",
+      "description": "Ka\u00e7 g\u00fcnl\u00fck veriden \u00fcretildi"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "forecast_date"
+  ]
+}

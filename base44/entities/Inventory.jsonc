@@ -1,0 +1,73 @@
+{
+  "name": "Inventory",
+  "type": "object",
+  "description": "Malzeme ve stok takibi",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "kg",
+        "litre",
+        "adet",
+        "kutu",
+        "paket"
+      ],
+      "default": "adet"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "meat",
+        "vegetable",
+        "dairy",
+        "dough",
+        "drink",
+        "sauce",
+        "spice",
+        "packaging",
+        "other"
+      ],
+      "default": "other"
+    },
+    "current_quantity": {
+      "type": "number",
+      "default": 0
+    },
+    "low_stock_threshold": {
+      "type": "number",
+      "default": 5
+    },
+    "linked_products": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "auto_disable_products": {
+      "type": "boolean",
+      "default": true
+    },
+    "supplier_name": {
+      "type": "string"
+    },
+    "supplier_phone": {
+      "type": "string"
+    },
+    "last_updated_by_ai": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "name",
+    "unit"
+  ]
+}

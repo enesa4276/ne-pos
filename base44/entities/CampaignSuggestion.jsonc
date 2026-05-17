@@ -1,0 +1,62 @@
+{
+  "name": "CampaignSuggestion",
+  "type": "object",
+  "description": "AI taraf\u0131ndan \u00fcretilen kampanya \u00f6nerileri",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "suggestion_type": {
+      "type": "string",
+      "enum": [
+        "discount",
+        "bundle",
+        "happy_hour",
+        "loyalty_reward",
+        "social_post",
+        "whatsapp_campaign"
+      ]
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "AI neden \u00f6nerdi"
+    },
+    "expected_revenue_impact": {
+      "type": "number"
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "wix",
+          "instagram",
+          "whatsapp",
+          "sms_to_customers",
+          "qr_menu",
+          "pos_screen"
+        ]
+      }
+    },
+    "approved": {
+      "type": "boolean",
+      "default": false
+    },
+    "executed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "title",
+    "suggestion_type"
+  ]
+}

@@ -25,6 +25,13 @@ import TenantManagement from '@/pages/admin/TenantManagement';
 import TenantDetail from '@/pages/admin/TenantDetail';
 import QRCodeManager from '@/pages/admin/QRCodeManager';
 import LiveCalls from '@/pages/LiveCalls';
+import SmartAlerts from '@/pages/SmartAlerts';
+import AISuggestions from '@/pages/AISuggestions';
+import StockManagement from '@/pages/StockManagement';
+import Reviews from '@/pages/Reviews';
+import DailyReports from '@/pages/DailyReports';
+import CallQualityAnalysis from '@/pages/CallQualityAnalysis';
+import OrderForecastPage from '@/pages/OrderForecastPage';
 import QRMenu from '@/pages/qr/QRMenu';
 
 const AuthenticatedApp = () => {
@@ -80,6 +87,13 @@ const AuthenticatedApp = () => {
         <Route path="/admin/qr-codes" element={<QRCodeManager />} />
         <Route path="/ai-phone" element={<AIPhoneDashboard />} />
         <Route path="/live-calls" element={<LiveCalls />} />
+        <Route path="/alerts" element={<SmartAlerts />} />
+        <Route path="/suggestions" element={<AISuggestions />} />
+        <Route path="/stock" element={<StockManagement />} />
+        <Route path="/reviews" element={<Reviews />} />
+        <Route path="/reports" element={<DailyReports />} />
+        <Route path="/call-quality" element={<CallQualityAnalysis />} />
+        <Route path="/forecast" element={<OrderForecastPage />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/account" element={<Account />} />
       </Route>

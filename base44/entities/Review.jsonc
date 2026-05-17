@@ -1,0 +1,53 @@
+{
+  "name": "Review",
+  "type": "object",
+  "description": "M\u00fc\u015fteri yorumlar\u0131",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "description": "1-5"
+    },
+    "comment": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "google",
+        "wix",
+        "whatsapp"
+      ],
+      "default": "internal"
+    },
+    "redirected_to_public": {
+      "type": "boolean",
+      "default": false,
+      "description": "4-5 y\u0131ld\u0131z Google'a y\u00f6nlendirildi mi"
+    },
+    "responded_by_owner": {
+      "type": "boolean",
+      "default": false
+    },
+    "owner_response": {
+      "type": "string"
+    },
+    "created_via_link_id": {
+      "type": "string",
+      "description": "Hangi yorum linkinden geldi"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "rating"
+  ]
+}

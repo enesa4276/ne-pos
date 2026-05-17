@@ -1,0 +1,55 @@
+{
+  "name": "CallQualityScore",
+  "type": "object",
+  "description": "AI \u00e7a\u011fr\u0131 kalite skorlamas\u0131",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "phone_call_id": {
+      "type": "string",
+      "description": "PhoneCall entity ID referans\u0131"
+    },
+    "overall_score": {
+      "type": "number",
+      "description": "1-10"
+    },
+    "customer_satisfaction": {
+      "type": "number",
+      "description": "1-10"
+    },
+    "order_completeness": {
+      "type": "number",
+      "description": "1-10"
+    },
+    "voice_clarity": {
+      "type": "number",
+      "description": "1-10"
+    },
+    "response_speed": {
+      "type": "number",
+      "description": "1-10"
+    },
+    "hallucination_detected": {
+      "type": "boolean",
+      "default": false
+    },
+    "issues": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "improvements_suggested": {
+      "type": "string"
+    },
+    "ai_self_evaluation": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "phone_call_id"
+  ]
+}

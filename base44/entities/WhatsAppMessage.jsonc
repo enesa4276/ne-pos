@@ -1,0 +1,68 @@
+{
+  "name": "WhatsAppMessage",
+  "type": "object",
+  "description": "WhatsApp mesaj ge\u00e7mi\u015fi",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string"
+    },
+    "order_id": {
+      "type": "string"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "order_confirmation",
+        "delivery_eta",
+        "delivery_arrived",
+        "review_request",
+        "win_back_campaign"
+      ]
+    },
+    "message_text": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "sent",
+        "delivered",
+        "read",
+        "failed"
+      ],
+      "default": "queued"
+    },
+    "sent_via": {
+      "type": "string",
+      "enum": [
+        "twilio_whatsapp",
+        "wa_business_api",
+        "free_link"
+      ]
+    },
+    "scheduled_for": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cost": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "tenant_id",
+    "customer_phone",
+    "message_type"
+  ]
+}

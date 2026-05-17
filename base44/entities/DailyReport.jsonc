@@ -1,0 +1,90 @@
+{
+  "name": "DailyReport",
+  "type": "object",
+  "description": "G\u00fcnl\u00fck sat\u0131\u015f ve performans raporu",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "description": "YYYY-MM-DD"
+    },
+    "total_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "total_revenue": {
+      "type": "number",
+      "default": 0
+    },
+    "dine_in_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "takeaway_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "delivery_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "phone_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "cancelled_orders": {
+      "type": "number",
+      "default": 0
+    },
+    "average_order_value": {
+      "type": "number",
+      "default": 0
+    },
+    "busiest_hour": {
+      "type": "number"
+    },
+    "top_selling_items": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          },
+          "revenue": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "low_performing_items": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "new_customers": {
+      "type": "number",
+      "default": 0
+    },
+    "returning_customers": {
+      "type": "number",
+      "default": 0
+    },
+    "ai_insights": {
+      "type": "string",
+      "description": "AI \u00f6zeti ve \u00f6nerileri"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "date"
+  ]
+}

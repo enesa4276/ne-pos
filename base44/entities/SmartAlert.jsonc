@@ -1,0 +1,52 @@
+{
+  "name": "SmartAlert",
+  "type": "object",
+  "description": "Ak\u0131ll\u0131 sistem uyar\u0131lar\u0131",
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "stock_low",
+        "stock_out",
+        "rush_hour_starting",
+        "unusual_traffic",
+        "wix_order_failed",
+        "ai_call_failed",
+        "negative_review",
+        "operating_hours_anomaly",
+        "no_orders_today",
+        "capacity_warning",
+        "customer_churn_risk"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "critical"
+      ],
+      "default": "info"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "action_taken": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "tenant_id",
+    "type",
+    "message",
+    "severity"
+  ]
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone, Radio, Settings2 } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, ClipboardList, Settings, BarChart3, Shield, Tablet as TabletIcon, Package, History, Phone, Radio, Settings2, Bell, Lightbulb, Box, Star } from 'lucide-react';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useTenant } from '@/lib/TenantContext';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,11 @@ const NAV = [
   { to: '/history',   label: 'Geçmiş',     icon: History },
   { to: '/ai-phone',  label: 'AI Telefon', icon: Phone },
   { to: '/live-calls', label: 'Canlı',     icon: Radio },
+  { to: '/alerts',    label: 'Uyarılar',   icon: Bell },
+  { to: '/suggestions', label: 'Öneriler', icon: Lightbulb },
   { to: '/analytics', label: 'Analiz',     icon: BarChart3 },
+  { to: '/stock',     label: 'Stok',       icon: Box },
+  { to: '/reviews',   label: 'Yorumlar',   icon: Star },
   { to: '/admin',     label: 'Menü',       icon: Package },
   { to: '/account',   label: 'Ayarlar',    icon: Settings },
 ];
