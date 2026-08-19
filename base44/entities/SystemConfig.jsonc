@@ -1,0 +1,28 @@
+{
+  "name": "SystemConfig",
+  "type": "object",
+  "description": "Global sistem ayarlar\u0131 \u2014 s\u00fcper admin taraf\u0131ndan y\u00f6netilir",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Ayar anahtar\u0131 (tekil, \u00f6rn: 'voice_server_url', 'nepos_api_key')"
+    },
+    "value": {
+      "type": "string",
+      "description": "Ayar de\u011feri"
+    },
+    "description": {
+      "type": "string",
+      "description": "Bu ayar\u0131n ne i\u015fe yarad\u0131\u011f\u0131"
+    },
+    "is_secret": {
+      "type": "boolean",
+      "default": false,
+      "description": "Gizli mi? (UI'da maskeli g\u00f6ster)"
+    }
+  },
+  "required": [
+    "key",
+    "value"
+  ]
+}
